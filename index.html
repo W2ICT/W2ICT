@@ -110,6 +110,28 @@ tr.row-clickable:hover td{background:#eff6ff!important;}
 .rd-lbl{font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
 .rd-val{font-size:13px;color:#1e293b;font-weight:500;word-break:break-word;}
 @keyframes spin{to{transform:rotate(360deg);}}
+/* DASHBOARD */
+.dash-section{background:#fff;border-radius:12px;padding:18px 20px;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.dash-section-title{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:14px;display:flex;align-items:center;gap:8px;border-bottom:2px solid #f1f5f9;padding-bottom:8px;}
+.kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+.kpi-card{flex:1;min-width:130px;background:linear-gradient(135deg,var(--c1),var(--c2));border-radius:12px;padding:16px 18px;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12);}
+.kpi-num{font-size:28px;font-weight:800;line-height:1;}
+.kpi-lbl{font-size:11px;opacity:.9;margin-top:4px;font-weight:600;}
+.kpi-sub{font-size:11px;opacity:.65;margin-top:2px;}
+.dash-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.dash-tbl th{background:#f8fafc;color:#475569;padding:7px 10px;text-align:left;font-weight:600;border-bottom:2px solid #e2e8f0;white-space:nowrap;}
+.dash-tbl td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+.dash-tbl tr:hover td{background:#f8fafc;}
+.dash-tbl tfoot td{font-weight:700;background:#f8fafc;border-top:2px solid #e2e8f0;}
+.mini-bar-wrap{display:flex;align-items:center;gap:6px;}
+.mini-bar{height:10px;border-radius:5px;background:linear-gradient(90deg,#3b82f6,#93c5fd);min-width:4px;transition:width .4s;}
+.age-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;margin:1px;}
+.age-pill.danger{background:#fee2e2;color:#991b1b;}
+.age-pill.warning{background:#fef9c3;color:#854d0e;}
+.age-pill.success{background:#dcfce7;color:#166534;}
+.age-pill.muted{background:#f1f5f9;color:#64748b;}
+.dash-two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:768px){.dash-two-col{grid-template-columns:1fr;}.kpi-card{min-width:calc(50% - 6px);}}
 .spin{animation:spin .7s linear infinite;}
 /* MAP PAGE */
 #page-mappage{padding:0;}
@@ -234,6 +256,8 @@ tr.dist-hl td{background:#dbeafe!important;}
       <i class="bi bi-layout-sidebar-inset" style="font-size:16px;flex-shrink:0"></i>
       <span class="nav-label">ย่อเมนู</span>
     </div>
+    <div class="nav-section-label">ภาพรวม</div>
+    <div class="nav-item" data-page="dashboard" onclick="nav(this)"><i class="bi bi-bar-chart-fill"></i><span class="nav-label">Dashboard</span></div>
     <div class="nav-section-label">ข้อมูลหลัก</div>
     <div class="nav-item active" data-page="personnel" onclick="nav(this)"><i class="bi bi-people-fill"></i><span class="nav-label">บุคลากร</span></div>
     <div class="nav-item" data-page="computer" onclick="nav(this)"><i class="bi bi-pc-display"></i><span class="nav-label">คอมพิวเตอร์</span></div>
@@ -245,6 +269,17 @@ tr.dist-hl td{background:#dbeafe!important;}
   </div>
   <!-- MAIN -->
   <div id="appMain">
+    <!-- Dashboard -->
+    <div id="page-dashboard" class="page-section">
+      <div class="page-header">
+        <div>
+          <div class="page-title"><i class="bi bi-bar-chart-fill me-2" style="color:#0ea5e9"></i>Dashboard — สรุปภาพรวม IT บน.2</div>
+          <div class="page-subtitle">วิเคราะห์ข้อมูลอุปกรณ์ IT ทั้งหมดจาก Google Sheet</div>
+        </div>
+        <button class="btn btn-outline-primary btn-sm" onclick="renderDashboard()"><i class="bi bi-arrow-clockwise me-1"></i>รีเฟรช</button>
+      </div>
+      <div id="dash-content"><div class="text-center text-muted py-5"><i class="bi bi-hourglass-split" style="font-size:2rem"></i><div class="mt-2">กำลังโหลดข้อมูล…</div></div></div>
+    </div>
     <!-- Personnel -->
     <div id="page-personnel" class="page-section active">
       <div class="page-header">
@@ -419,7 +454,7 @@ tr.dist-hl td{background:#dbeafe!important;}
 <div id="toastBox"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzuxMJ97bU0LOFAyAi-Bu019OVUp2QRevOw0825ALzroXkN0fk5naxBZ3o21A7wCdBuGw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNV0zbq4gBzp4o7BU3McVC269qkDi90C5HxGey3Qu-bIPlrciFOLH6l-akiE8udRXDXA/exec';
 const PASSWORDS  = { viewer:'W2ICT.2026V', admin:'W2ICT.2026A' };
 const PAGE_CFG = {
   personnel: { sheetKey:'สถานภาพบุคลากรด้าน IT', label:'บุคลากร',
@@ -559,7 +594,7 @@ function onLoaded(result){
   if(result.switches&&result.switches.length>0)SWITCHES=result.switches;
   mapSheets();
   Object.keys(PAGE_CFG).forEach(k=>renderTable(k));
-  renderStatBar();initMap();hideOverlay();
+  renderStatBar();initMap();renderDashboard();hideOverlay();
   document.getElementById('syncTime').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
   toast('โหลดข้อมูลสำเร็จ','success');
 }
@@ -571,7 +606,7 @@ function syncAll(){
       allData=r.data||{};sheetMeta=r.meta||{};
       if(r.switches&&r.switches.length>0){SWITCHES=r.switches;refreshMapData();}
       Object.keys(PAGE_CFG).forEach(k=>renderTable(k));
-      renderStatBar();
+      renderStatBar();renderDashboard();
       document.getElementById('syncIcon').classList.remove('spin');
       document.getElementById('syncTime').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
       hideOverlay();toast('ซิงค์สำเร็จ','success');
@@ -910,6 +945,234 @@ function flyToSW(lat,lng,idx){
 function ensureMapPage(){
   const ml=document.querySelector('[data-page="mappage"]');
   if(ml&&!document.getElementById('page-mappage').classList.contains('active')){nav(ml);setTimeout(()=>{if(leafletMap)leafletMap.invalidateSize();},150);}
+}
+
+// =====================================================================
+// DASHBOARD
+// =====================================================================
+function renderDashboard(){
+  const el=document.getElementById('dash-content');
+  if(!el)return;
+
+  // ── Get full data (all columns) ───────────────────────────────────
+  const cH=(allData[PAGE_CFG.computer.sheetKey]||{}).headers||[];
+  const cR=(allData[PAGE_CFG.computer.sheetKey]||{}).rows||[];
+  const lH=(allData[PAGE_CFG.laptop.sheetKey]||{}).headers||[];
+  const lR=(allData[PAGE_CFG.laptop.sheetKey]||{}).rows||[];
+  const wH=(allData[PAGE_CFG.wifi.sheetKey]||{}).headers||[];
+  const wR=(allData[PAGE_CFG.wifi.sheetKey]||{}).rows||[];
+  const nH=(allData[PAGE_CFG.network.sheetKey]||{}).headers||[];
+  const nR=(allData[PAGE_CFG.network.sheetKey]||{}).rows||[];
+
+  if(!cR.length&&!lR.length&&!wR.length&&!nR.length){
+    el.innerHTML='<div class="text-center text-muted py-5"><i class="bi bi-cloud-slash" style="font-size:2.5rem"></i><div class="mt-2">ยังไม่มีข้อมูล — กรุณาซิงค์ก่อน</div></div>';
+    return;
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────
+  function ci(hdr,...kws){return hdr.findIndex(h=>kws.some(kw=>h.toLowerCase().includes(kw.toLowerCase())));}
+  function gc(rows,idx){
+    const m={};
+    rows.forEach(r=>{const k=(String(r[idx]||'').trim())||'ไม่ระบุ';m[k]=(m[k]||0)+1;});
+    return m;
+  }
+  function sortDesc(obj){return Object.entries(obj).sort((a,b)=>b[1]-a[1]);}
+  function sortTh(obj){return Object.entries(obj).sort((a,b)=>a[0].localeCompare(b[0],'th'));}
+  const thisYear=new Date().getFullYear();
+
+  function parseYear(val){
+    if(!val)return null;
+    const m=String(val).match(/\b(25\d\d|19\d\d|20[0-3]\d)\b/);
+    if(!m)return null;
+    let y=parseInt(m[1]);
+    if(y>2500)y-=543;
+    return(y>=1990&&y<=thisYear+1)?y:null;
+  }
+  function findYearIdx(hdr){
+    const kws=['ปีที่จัด','ปีจัด','ปีที่ซื้อ','ปีซื้อ','ปีผลิต','ปีที่ผลิต','จัดซื้อ','งบประมาณ','year'];
+    let i=hdr.findIndex(h=>kws.some(kw=>h.toLowerCase().includes(kw.toLowerCase())));
+    if(i<0)i=hdr.findIndex(h=>/^ปี/.test(h.trim()));
+    return i;
+  }
+
+  // ── SECTION 1: คอมพิวเตอร์ตามหน่วยหลัก ────────────────────────
+  const cUI=ci(cH,'หน่วยหลัก'), lUI=ci(lH,'หน่วยหลัก');
+  const cByU=cUI>=0?gc(cR,cUI):{}, lByU=lUI>=0?gc(lR,lUI):{};
+  const allUnits=[...new Set([...Object.keys(cByU),...Object.keys(lByU)])].sort((a,b)=>a.localeCompare(b,'th'));
+  const totalPC=cR.length, totalNB=lR.length, totalAll=totalPC+totalNB;
+  const maxUnitTotal=Math.max(1,...allUnits.map(u=>(cByU[u]||0)+(lByU[u]||0)));
+
+  const unitRows=allUnits.map(u=>{
+    const pc=cByU[u]||0,nb=lByU[u]||0,tot=pc+nb;
+    const pct=totalAll?Math.round(tot/totalAll*100):0;
+    const bw=Math.max(4,Math.round(tot/maxUnitTotal*120));
+    return `<tr>
+      <td><strong>${u}</strong></td>
+      <td class="text-center">${pc||'—'}</td>
+      <td class="text-center">${nb||'—'}</td>
+      <td class="text-center"><strong>${tot}</strong></td>
+      <td><div class="mini-bar-wrap"><div class="mini-bar" style="width:${bw}px"></div><span style="font-size:11px;color:#94a3b8">${pct}%</span></div></td>
+    </tr>`;
+  }).join('');
+
+  // ── SECTION 2: วิเคราะห์อายุ ─────────────────────────────────
+  const cYI=findYearIdx(cH), lYI=findYearIdx(lH);
+  const hasYear=cYI>=0||lYI>=0;
+  let ageHtml='';
+
+  if(hasYear){
+    const unitMap={};
+    function collectAge(rows,hdr,uIdx,yIdx,tp){
+      rows.forEach(r=>{
+        const u=(String(r[uIdx<0?0:uIdx]||'').trim())||'ไม่ระบุ';
+        const y=yIdx>=0?parseYear(r[yIdx]):null;
+        if(!unitMap[u])unitMap[u]=[];
+        unitMap[u].push({y,tp});
+      });
+    }
+    collectAge(cR,cH,cUI,cYI,'PC');
+    collectAge(lR,lH,lUI,lYI,'NB');
+
+    const summary=Object.entries(unitMap).map(([u,items])=>{
+      const wy=items.filter(i=>i.y!==null).map(i=>i.y);
+      const noY=items.filter(i=>i.y===null).length;
+      const oldY=wy.length?Math.min(...wy):null;
+      const oldAge=oldY?thisYear-oldY:null;
+      const old8=wy.filter(y=>thisYear-y>=8).length;
+      const mid=wy.filter(y=>{const a=thisYear-y;return a>=5&&a<8;}).length;
+      const nw=wy.filter(y=>thisYear-y<5).length;
+      return{u,total:items.length,oldY,oldAge,old8,mid,nw,noY};
+    }).sort((a,b)=>{
+      if(b.old8!==a.old8)return b.old8-a.old8;
+      return(b.oldAge||0)-(a.oldAge||0);
+    });
+
+    const ageRows=summary.map(s=>{
+      const ageStr=s.oldY?`${s.oldY} <span style="color:#94a3b8;font-size:11px">(อายุ ${s.oldAge} ปี)</span>`:'—';
+      const pills=(s.old8?`<span class="age-pill danger">${s.old8} เครื่อง ≥8ปี</span>`:'')+
+                  (s.mid?`<span class="age-pill warning">${s.mid} เครื่อง 5–7ปี</span>`:'')+
+                  (s.nw?`<span class="age-pill success">${s.nw} เครื่อง ≤4ปี</span>`:'')+
+                  (s.noY?`<span class="age-pill muted">${s.noY} ไม่ระบุปี</span>`:'');
+      return `<tr>
+        <td><strong>${s.u}</strong></td>
+        <td class="text-center">${s.total}</td>
+        <td>${ageStr}</td>
+        <td>${pills}</td>
+      </tr>`;
+    }).join('');
+
+    ageHtml=`<table class="dash-tbl">
+      <thead><tr><th>หน่วยหลัก</th><th class="text-center">จำนวน</th><th>เครื่องเก่าสุด</th><th>การกระจายอายุ</th></tr></thead>
+      <tbody>${ageRows}</tbody>
+    </table>
+    <div style="margin-top:10px;font-size:11px;color:#94a3b8;display:flex;gap:8px;flex-wrap:wrap;">
+      <span class="age-pill danger">≥ 8 ปี — ควรทดแทนเร่งด่วน</span>
+      <span class="age-pill warning">5–7 ปี — วางแผนทดแทน</span>
+      <span class="age-pill success">≤ 4 ปี — ยังใช้ได้ดี</span>
+    </div>`;
+  } else {
+    // Fallback: group by brand
+    const brandIdx=ci([...cH,...lH],'ยี่ห้อ');
+    const allRows=[...cR,...lR];
+    const bIdx=ci(cH,'ยี่ห้อ')>=0?ci(cH,'ยี่ห้อ'):ci(lH,'ยี่ห้อ');
+    ageHtml=`<div class="alert alert-info py-2 px-3" style="font-size:12px">
+      <i class="bi bi-info-circle me-1"></i>ไม่พบคอลัมน์ "ปีที่จัดซื้อ" ในข้อมูล หากต้องการวิเคราะห์อายุ กรุณาเพิ่มคอลัมน์ดังกล่าวในชีท
+    </div>`;
+    if(bIdx>=0){
+      const bComb={};
+      cR.forEach(r=>{const k=String(r[ci(cH,'ยี่ห้อ')]||'').trim()||'ไม่ระบุ';bComb[k]=(bComb[k]||0)+1;});
+      lR.forEach(r=>{const k=String(r[ci(lH,'ยี่ห้อ')]||'').trim()||'ไม่ระบุ';bComb[k]=(bComb[k]||0)+1;});
+      ageHtml+=`<table class="dash-tbl mt-2"><thead><tr><th>ยี่ห้ออุปกรณ์</th><th class="text-center">จำนวน</th></tr></thead>
+        <tbody>${sortDesc(bComb).map(([b,n])=>`<tr><td>${b}</td><td class="text-center"><strong>${n}</strong></td></tr>`).join('')}</tbody>
+      </table>`;
+    }
+  }
+
+  // ── SECTION 3: WiFi & Switch ──────────────────────────────────
+  const wMI=ci(wH,'ชื่อ/รุ่น','ชื่อ','รุ่น'), wUI2=ci(wH,'หน่วยหลัก'), wTI=ci(wH,'ประเภท');
+  const nMI=ci(nH,'ชื่อ/รุ่น','ชื่อ','รุ่น'), nUI2=ci(nH,'หน่วยหลัก'), nTI=ci(nH,'ประเภท');
+  const wModels=wMI>=0?gc(wR,wMI):{}, nModels=nMI>=0?gc(nR,nMI):{};
+  const wByU2=wUI2>=0?gc(wR,wUI2):{}, nByU2=nUI2>=0?gc(nR,nUI2):{};
+  const allNetU=[...new Set([...Object.keys(wByU2),...Object.keys(nByU2)])].sort((a,b)=>a.localeCompare(b,'th'));
+
+  // WiFi type groups
+  const wTypes=wTI>=0?gc(wR,wTI):{};
+  const nTypes=nTI>=0?gc(nR,nTI):{};
+
+  function modelTable(obj,total){
+    if(!Object.keys(obj).length)return '<div class="text-muted text-center py-2" style="font-size:12px">ไม่มีข้อมูล</div>';
+    return`<table class="dash-tbl">
+      <thead><tr><th>รุ่น / ยี่ห้อ</th><th class="text-center">จำนวน</th></tr></thead>
+      <tbody>${sortDesc(obj).map(([m,n])=>`<tr><td>${m||'ไม่ระบุ'}</td><td class="text-center"><strong>${n}</strong></td></tr>`).join('')}</tbody>
+      <tfoot><tr><td>รวม</td><td class="text-center">${total}</td></tr></tfoot>
+    </table>`;
+  }
+
+  const netUnitRows=allNetU.map(u=>{
+    const w=wByU2[u]||0,s=nByU2[u]||0;
+    return`<tr><td><strong>${u}</strong></td><td class="text-center">${w||'—'}</td><td class="text-center">${s||'—'}</td><td class="text-center"><strong>${w+s}</strong></td></tr>`;
+  }).join('');
+
+  // ── Render ────────────────────────────────────────────────────
+  el.innerHTML=`
+  <div class="kpi-row">
+    <div class="kpi-card" style="--c1:#1d4ed8;--c2:#3b82f6">
+      <div class="kpi-num">${totalAll}</div>
+      <div class="kpi-lbl">คอมพิวเตอร์ทั้งหมด</div>
+      <div class="kpi-sub">PC ${totalPC} + Notebook ${totalNB}</div>
+    </div>
+    <div class="kpi-card" style="--c1:#7c3aed;--c2:#a78bfa">
+      <div class="kpi-num">${wR.length}</div>
+      <div class="kpi-lbl">WiFi / Access Point</div>
+      <div class="kpi-sub">${Object.keys(wModels).length} รุ่น${Object.keys(wTypes).length?', '+Object.keys(wTypes).length+' ประเภท':''}</div>
+    </div>
+    <div class="kpi-card" style="--c1:#be123c;--c2:#fb7185">
+      <div class="kpi-num">${nR.length}</div>
+      <div class="kpi-lbl">Switch / อุปกรณ์เครือข่าย</div>
+      <div class="kpi-sub">${Object.keys(nModels).length} รุ่น${Object.keys(nTypes).length?', '+Object.keys(nTypes).length+' ประเภท':''}</div>
+    </div>
+    <div class="kpi-card" style="--c1:#0f766e;--c2:#2dd4bf">
+      <div class="kpi-num">${allUnits.length}</div>
+      <div class="kpi-lbl">หน่วยงานที่มีข้อมูล</div>
+      <div class="kpi-sub">IT ทั้ง ${totalAll+wR.length+nR.length} อุปกรณ์</div>
+    </div>
+  </div>
+
+  <div class="dash-section">
+    <div class="dash-section-title"><i class="bi bi-pc-display-horizontal" style="color:#1d4ed8"></i>จำนวนคอมพิวเตอร์ตามหน่วยหลัก (PC + Notebook)</div>
+    ${allUnits.length?`<table class="dash-tbl">
+      <thead><tr><th>หน่วยหลัก</th><th class="text-center">PC</th><th class="text-center">Notebook</th><th class="text-center">รวม</th><th>สัดส่วน</th></tr></thead>
+      <tbody>${unitRows}</tbody>
+      <tfoot><tr><td>รวมทั้งหมด</td><td class="text-center">${totalPC}</td><td class="text-center">${totalNB}</td><td class="text-center">${totalAll}</td><td></td></tr></tfoot>
+    </table>`:'<div class="text-muted text-center py-3" style="font-size:12px">ไม่พบคอลัมน์ หน่วยหลัก</div>'}
+  </div>
+
+  <div class="dash-section">
+    <div class="dash-section-title"><i class="bi bi-clock-history" style="color:#d97706"></i>วิเคราะห์อายุเครื่อง — จัดลำดับการสนับสนุนทดแทน</div>
+    ${ageHtml}
+  </div>
+
+  <div class="dash-section">
+    <div class="dash-section-title"><i class="bi bi-diagram-3" style="color:#7c3aed"></i>WiFi & Switch — จัดกลุ่มอุปกรณ์และรุ่น</div>
+    <div class="dash-two-col">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#5b21b6;margin-bottom:8px"><i class="bi bi-wifi me-1"></i>WiFi / Access Point (${wR.length} ตัว)</div>
+        ${modelTable(wModels,wR.length)}
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px"><i class="bi bi-hdd-network me-1"></i>Switch / เครือข่าย (${nR.length} ตัว)</div>
+        ${modelTable(nModels,nR.length)}
+      </div>
+    </div>
+    ${allNetU.length?`<div style="margin-top:16px">
+      <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px"><i class="bi bi-building me-1"></i>อุปกรณ์เครือข่ายตามหน่วยหลัก</div>
+      <table class="dash-tbl">
+        <thead><tr><th>หน่วยหลัก</th><th class="text-center">WiFi/AP</th><th class="text-center">Switch</th><th class="text-center">รวม</th></tr></thead>
+        <tbody>${netUnitRows}</tbody>
+        <tfoot><tr><td>รวม</td><td class="text-center">${wR.length}</td><td class="text-center">${nR.length}</td><td class="text-center">${wR.length+nR.length}</td></tr></tfoot>
+      </table>
+    </div>`:''}
+  </div>`;
 }
 
 // TOAST
