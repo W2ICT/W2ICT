@@ -95,6 +95,20 @@ body.role-viewer .admin-only,body.role-viewer .btn-edit,body.role-viewer .btn-de
 .lov-step.active{color:#fff;font-weight:700;}
 .lov-step.done{color:rgba(255,255,255,.65);}
 .lov-step-ico{font-size:13px;width:18px;text-align:center;flex-shrink:0;}
+/* ROW CLICKABLE */
+tr.row-clickable{cursor:pointer;}
+tr.row-clickable:hover td{background:#eff6ff!important;}
+/* PAGINATION */
+.pg-ctrl{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;font-size:12px;}
+.btn-pg,.btn-pg-sz{border:1px solid #e2e8f0;background:#fff;border-radius:6px;padding:3px 9px;cursor:pointer;font-size:11px;color:#475569;transition:all .15s;}
+.btn-pg:hover:not(:disabled),.btn-pg-sz:hover{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8;}
+.btn-pg:disabled{opacity:.35;cursor:not-allowed;}
+.btn-pg-sz.active{background:#1a3a6e;border-color:#1a3a6e;color:#fff;font-weight:700;}
+/* ROW DETAIL MODAL */
+.rd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
+.rd-item{background:#f8fafc;border-radius:8px;padding:10px 12px;border:1px solid #e2e8f0;}
+.rd-lbl{font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.rd-val{font-size:13px;color:#1e293b;font-weight:500;word-break:break-word;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .spin{animation:spin .7s linear infinite;}
 /* MAP PAGE */
@@ -385,19 +399,41 @@ tr.dist-hl td{background:#dbeafe!important;}
     <div class="lov-steps" id="lovSteps"></div>
   </div>
 </div>
+<!-- Row Detail Modal -->
+<div class="modal fade" id="rowDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title fw-bold" id="rdTitle">รายละเอียด</h6>
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="rdBody"></div>
+    </div>
+  </div>
+</div>
 <div id="toastBox"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz2lbJ5z1xMo9fe0EbwbM3V3owUYRUM37PvecptSAbznaVYl0vYb5KAqG5ZPN54fH9MPg/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNmO8viKmHgMwxPnf-OVwA9b5F8nuuAIDZl79U8UO5k2gd0q-6T3RC_dn4AWZ2ZuFF/exec';
 const PASSWORDS  = { viewer:'W2ICT.2026V', admin:'W2ICT.2026A' };
 const PAGE_CFG = {
-  personnel: { sheetKey:'Personnel', label:'บุคลากร' },
-  computer:  { sheetKey:'Computer',  label:'คอมพิวเตอร์' },
-  laptop:    { sheetKey:'Laptop',    label:'Laptop' },
-  wifi:      { sheetKey:'WiFi',      label:'WiFi' },
-  network:   { sheetKey:'Network',   label:'Network' }
+  personnel: { sheetKey:'Personnel', label:'บุคลากร',
+    hideCols:['หน่วยหลัก','หน่วยรอง'] },
+  computer:  { sheetKey:'Computer',  label:'คอมพิวเตอร์',
+    showCols:['ลำดับ','ชื่อ','ยี่ห้อ','รุ่น','ip','mac'], pageSize:25 },
+  laptop:    { sheetKey:'Laptop',    label:'คอมพิวเตอร์ (พกพา)',
+    showCols:['ลำดับ','ชื่อ','ยี่ห้อ','รุ่น','ip','mac'], pageSize:25 },
+  wifi:      { sheetKey:'WiFi',      label:'WiFi / AP',
+    showCols:['ลำดับ','track','หน่วยหลัก','สถานที่','ชื่อ','รุ่น','mac','ip'], pageSize:25 },
+  network:   { sheetKey:'Network',   label:'Switch / อุปกรณ์เครือข่าย',
+    showCols:['ลำดับ','track','หน่วยหลัก','สถานที่','ชื่อ','รุ่น','mac','ip'], pageSize:25 }
 };
 let userRole='viewer', selectedRole='viewer', allData={}, sheetMeta=[], filteredCache={}, editState=null, sbCollapsed=false;
+const _tblSearch={};
+const tblPageSize={computer:25,laptop:25,wifi:25,network:25};
+const tblPage={computer:1,laptop:1,wifi:1,network:1};
+function setPageSize(pk,n){tblPageSize[pk]=n;tblPage[pk]=1;renderTable(pk);}
+function gotoPage(pk,p){tblPage[pk]=p;renderTable(pk);}
 let leafletMap=null, switchMarkerGroup=null, swMarkerList=[], swPolyline=null;
 let swEditState=null, swPickingCoords=false, _swSavedFields={}, calcLine=null, distSegments=[];
 
@@ -547,7 +583,7 @@ function mapSheets(){
   }
   tryMap('personnel','personnel','บุคลากร','กำลัง');
   tryMap('computer','computer','คอมพิวเตอร์','desktop');
-  tryMap('laptop','laptop','โน๊ตบุ๊ค','notebook');
+  tryMap('laptop','laptop','โน๊ตบุ๊ค','notebook','พกพา','สถานภาพคอมพิวเตอร์ (พกพา)');
   tryMap('wifi','wifi','ap','access');
   tryMap('network','network','switch','อุปกรณ์');
 }
@@ -570,23 +606,79 @@ function toggleSB(){
 
 // TABLE
 function getSheetData(pk){return allData[PAGE_CFG[pk]?.sheetKey]||{headers:[],rows:[]};}
+
+function getVisibleIndices(pk,headers){
+  const cfg=PAGE_CFG[pk]||{};
+  let idx=headers.map((_,i)=>i);
+  if(cfg.showCols&&cfg.showCols.length){
+    const vis=idx.filter(i=>cfg.showCols.some(kw=>headers[i].toLowerCase().includes(kw.toLowerCase())));
+    if(vis.length>0)idx=vis;
+  }
+  if(cfg.hideCols&&cfg.hideCols.length){
+    idx=idx.filter(i=>!cfg.hideCols.some(kw=>headers[i].toLowerCase().includes(kw.toLowerCase())));
+  }
+  return idx;
+}
+
 function renderTable(pk,search){
+  if(search!==undefined){if(_tblSearch[pk]!==search)tblPage[pk]=1;_tblSearch[pk]=search;}
+  const q=(_tblSearch[pk]||'').toLowerCase();
   const {headers,rows}=getSheetData(pk);
   const thead=document.getElementById('thead-'+pk),tbody=document.getElementById('tbody-'+pk),cnt=document.getElementById('cnt-'+pk);
   if(!thead||!tbody)return;
-  const q=(search||'').toLowerCase();
   const filtered=q?rows.filter(r=>r.some(c=>String(c).toLowerCase().includes(q))):rows;
   filteredCache[pk]=filtered.map(r=>({r,i:rows.indexOf(r)}));
-  thead.innerHTML=headers.map(h=>`<th>${h}</th>`).join('')+'<th class="admin-only">จัดการ</th>';
-  tbody.innerHTML=filtered.map(row=>{
+  const vis=getVisibleIndices(pk,headers);
+  const cfg=PAGE_CFG[pk]||{};
+  const hasPg=cfg.pageSize!==undefined;
+  let paged=filtered,totalPages=1;
+  if(hasPg&&tblPageSize[pk]>0){
+    totalPages=Math.max(1,Math.ceil(filtered.length/tblPageSize[pk]));
+    tblPage[pk]=Math.min(tblPage[pk]||1,totalPages);
+    const s=(tblPage[pk]-1)*tblPageSize[pk];
+    paged=filtered.slice(s,s+tblPageSize[pk]);
+  }
+  thead.innerHTML=vis.map(i=>`<th>${headers[i]}</th>`).join('')+'<th class="admin-only">จัดการ</th>';
+  tbody.innerHTML=paged.map(row=>{
     const ri=rows.indexOf(row);
-    return `<tr>${row.map(c=>`<td title="${String(c||'').replace(/"/g,'&quot;')}">${c||'—'}</td>`).join('')}
-      <td class="admin-only" style="white-space:nowrap">
+    const cells=vis.map(i=>`<td title="${String(row[i]||'').replace(/"/g,'&quot;')}">${row[i]||'—'}</td>`).join('');
+    return `<tr class="row-clickable" onclick="showRowDetail('${pk}',${ri})">
+      ${cells}
+      <td class="admin-only" style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn-edit me-1" onclick="editRow('${pk}',${ri})"><i class="bi bi-pencil-fill"></i></button>
         <button class="btn-del" onclick="delRow('${pk}',${ri})"><i class="bi bi-trash-fill"></i></button>
       </td></tr>`;
   }).join('');
   if(cnt)cnt.textContent=`${filtered.length} รายการ${q?' (กรอง)':''}`;
+  if(hasPg)renderPagination(pk,filtered.length,totalPages);
+}
+
+function renderPagination(pk,total,totalPages){
+  let ctrl=document.getElementById('pagectrl-'+pk);
+  if(!ctrl){
+    ctrl=document.createElement('div');ctrl.id='pagectrl-'+pk;ctrl.className='pg-ctrl';
+    const wrap=document.querySelector('#page-'+pk+' .tbl-wrap');
+    if(wrap)wrap.insertAdjacentElement('afterend',ctrl);
+  }
+  const cur=tblPage[pk]||1,ps=tblPageSize[pk];
+  ctrl.innerHTML=
+    `<span style="color:#64748b">แสดง</span>`+
+    [25,50,100].map(n=>`<button class="btn-pg-sz${ps===n?' active':''}" onclick="setPageSize('${pk}',${n})">${n}</button>`).join('')+
+    `<span style="color:#64748b">/ หน้า</span><div style="flex:1"></div>`+
+    `<span style="color:#64748b;font-size:11px">${total} รายการ &nbsp;|&nbsp; หน้า ${cur}/${totalPages}</span>`+
+    `<button class="btn-pg" onclick="gotoPage('${pk}',${cur-1})"${cur<=1?' disabled':''}><i class="bi bi-chevron-left"></i></button>`+
+    `<button class="btn-pg" onclick="gotoPage('${pk}',${cur+1})"${cur>=totalPages?' disabled':''}><i class="bi bi-chevron-right"></i></button>`;
+}
+
+function showRowDetail(pk,ri){
+  const {headers,rows}=getSheetData(pk);
+  const row=rows[ri];if(!row)return;
+  document.getElementById('rdTitle').textContent=(PAGE_CFG[pk]?.label||pk)+' — รายละเอียด';
+  document.getElementById('rdBody').innerHTML='<div class="rd-grid">'+
+    headers.map((h,i)=>String(row[i]||'').trim()?
+      `<div class="rd-item"><div class="rd-lbl">${h}</div><div class="rd-val">${row[i]}</div></div>`:''
+    ).join('')+'</div>';
+  new bootstrap.Modal(document.getElementById('rowDetailModal')).show();
 }
 
 // STATS BAR
