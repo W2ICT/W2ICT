@@ -454,7 +454,7 @@ tr.dist-hl td{background:#dbeafe!important;}
 <div id="toastBox"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwx34O3NuBse6h_xnuCGueC4YLRbiZXk1mx3FOxIsNavB_7HGnXXgpiN-nuEu_UIZe6w/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz8r6wLTruxTo6s0MCQiUQAuqfNnYDtOiqVwF6QVXu_cW-biM_oN2sUl-XPkDkLnvSNiA/exec';
 const PASSWORDS  = { viewer:'W2ICT.2026V', admin:'W2ICT.2026A' };
 const PAGE_CFG = {
   personnel: { sheetKey:'สถานภาพบุคลากรด้าน IT', label:'บุคลากร',
@@ -1025,10 +1025,11 @@ function renderDashboard(){
   }).join('');
 
   // ── SECTION 2: วิเคราะห์อายุ ─────────────────────────────────
-  // ลำดับความสำคัญ: คอลัมน์ "อายุอุปกรณ์(ปี)" > คอลัมน์ปีที่จัดซื้อ
-  const cAI=findAgeIdx(cH), lAI=findAgeIdx(lH);
-  const cYI=findYearIdx(cH), lYI=findYearIdx(lH);
-  const hasAgeData=(cAI>=0||lAI>=0)||(cYI>=0||lYI>=0);
+  // ดึงข้อมูลอายุจาก "สถานภาพคอมพิวเตอร์" เท่านั้น
+  // ลำดับความสำคัญ: คอลัมน์ "อายุอุปกรณ์ (ปี)" > คอลัมน์ปีที่จัดซื้อ
+  const cAI=findAgeIdx(cH);
+  const cYI=findYearIdx(cH);
+  const hasAgeData=(cAI>=0||cYI>=0);
   let ageHtml='';
 
   if(hasAgeData){
@@ -1039,7 +1040,7 @@ function renderDashboard(){
         const u=(String(r[uIdx<0?0:uIdx]||'').trim())||'ไม่ระบุ';
         let age=null;
         if(aIdx>=0){
-          // อ่านอายุโดยตรง
+          // อ่านอายุโดยตรงจากคอลัมน์ "อายุอุปกรณ์ (ปี)"
           age=parseAge(r[aIdx]);
         } else if(yIdx>=0){
           // คำนวณจากปีที่จัดซื้อ
@@ -1050,11 +1051,11 @@ function renderDashboard(){
         unitMap[u].push({age,tp});
       });
     }
+    // วิเคราะห์เฉพาะชีท "สถานภาพคอมพิวเตอร์"
     collectAge(cR,cH,cUI,cAI,cYI,'PC');
-    collectAge(lR,lH,lUI,lAI,lYI,'NB');
 
     // แหล่งที่ใช้วิเคราะห์
-    const srcLabel=(cAI>=0||lAI>=0)?'อายุอุปกรณ์(ปี)':'ปีที่จัดซื้อ';
+    const srcLabel=cAI>=0?'อายุอุปกรณ์ (ปี)':'ปีที่จัดซื้อ';
 
     const summary=Object.entries(unitMap).map(([u,items])=>{
       const wa=items.filter(i=>i.age!==null).map(i=>i.age);
@@ -1094,7 +1095,7 @@ function renderDashboard(){
 
     ageHtml=`
     <div style="font-size:11px;color:#64748b;margin-bottom:10px">
-      <i class="bi bi-database me-1"></i>วิเคราะห์จากคอลัมน์: <strong>"${srcLabel}"</strong>
+      <i class="bi bi-database me-1"></i>ข้อมูลจาก: <strong>สถานภาพคอมพิวเตอร์</strong> &nbsp;|&nbsp; คอลัมน์: <strong>"${srcLabel}"</strong>
       &nbsp;|&nbsp; รวมทั้งหมด:
       <span class="age-pill danger">${grandOld} เครื่อง ≥8ปี</span>
       <span class="age-pill warning">${grandMid} เครื่อง 5–7ปี</span>
