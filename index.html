@@ -1,1030 +1,825 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ระบบบริหารข้อมูล IT บน.2</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ระบบบริหารข้อมูล IT — กองบิน 2</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.20.1/xlsx.full.min.js"></script>
 <style>
-/* ── RESET & BASE ── */
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Sarabun',sans-serif;background:#f4f6f9;font-size:14px;color:#1e293b;}
-
-/* ── LOGIN ── */
-#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0f2447 0%,#1a3a6e 50%,#0d5c8f 100%);display:flex;align-items:center;justify-content:center;z-index:9999;}
-.login-card{background:#fff;border-radius:20px;padding:48px 40px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.35);}
-.login-logo{width:64px;height:64px;background:linear-gradient(135deg,#1a3a6e,#0d5c8f);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;color:#fff;font-size:1.8rem;}
-.login-title{font-size:1.2rem;font-weight:700;color:#1a3a6e;text-align:center;}
-.login-sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:28px;}
-
-/* ── TOPBAR ── */
-#topbar{height:52px;background:#fff;border-bottom:1px solid #e2e8f0;position:fixed;top:0;left:0;right:0;z-index:300;display:flex;align-items:center;padding:0 16px;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
-.topbar-brand{font-weight:700;font-size:.95rem;color:#1a3a6e;white-space:nowrap;}
-#toggleSidebar{background:none;border:none;color:#64748b;font-size:1.1rem;cursor:pointer;padding:6px;border-radius:6px;}
-#toggleSidebar:hover{background:#f1f5f9;}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
-.btn-sync{background:#f1f5f9;border:1px solid #e2e8f0;color:#334155;font-size:12px;padding:5px 14px;border-radius:8px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;}
-.btn-sync:hover{background:#e2e8f0;}
-.sync-time{font-size:11px;color:#94a3b8;}
-
-/* ── SIDEBAR ── */
-#sidebar{position:fixed;top:52px;left:0;bottom:0;width:220px;background:#fff;border-right:1px solid #e2e8f0;overflow-y:auto;overflow-x:hidden;transition:width .25s ease;z-index:200;}
-#sidebar.collapsed{width:52px;}
-.sb-section{font-size:10px;font-weight:700;letter-spacing:.8px;color:#94a3b8;padding:14px 14px 4px;text-transform:uppercase;white-space:nowrap;overflow:hidden;max-height:40px;transition:max-height .25s ease,opacity .15s ease,padding .25s ease;}
-#sidebar.collapsed .sb-section{max-height:0;opacity:0;padding:0;}
-.nav-lnk{display:flex;align-items:center;gap:0;padding:9px 14px;color:#475569;font-size:13px;text-decoration:none;cursor:pointer;border-radius:8px;margin:1px 6px;transition:background .12s,color .12s;}
-.nav-lnk:hover{background:#f1f5f9;color:#1a3a6e;}
-.nav-lnk.active{background:#eff6ff;color:#1d4ed8;font-weight:600;}
-.nav-lnk .icon{font-size:1rem;width:20px;min-width:20px;text-align:center;flex-shrink:0;}
-.nav-lnk .lbl{max-width:180px;overflow:hidden;white-space:nowrap;margin-left:10px;transition:max-width .25s ease,opacity .15s ease,margin-left .25s ease;}
-#sidebar.collapsed .nav-lnk .lbl{max-width:0;opacity:0;margin-left:0;pointer-events:none;}
-#sidebar.collapsed .nav-lnk{padding:9px;justify-content:center;}
-
-/* ── MAIN CONTENT ── */
-#appMain{margin-left:220px;padding:112px 20px 24px;transition:margin-left .2s ease;min-height:100vh;}
-#appMain.wide{margin-left:52px;}
-.page{display:none;}
-.page.active{display:block;}
-
-/* ── STATS BAR (แทน Dashboard) ── */
-#statsBar{position:fixed;top:52px;left:220px;right:0;height:44px;background:#fff;border-bottom:1px solid #e2e8f0;display:none;align-items:center;padding:0 16px;gap:0;z-index:199;transition:left .25s ease;overflow-x:auto;}
-#statsBar.wide{left:52px;}
-.sb-stat{display:flex;align-items:center;gap:5px;padding:0 12px;white-space:nowrap;border-right:1px solid #f1f5f9;}
-.sb-stat:last-child{border-right:none;}
-.sb-stat-icon{font-size:.85rem;}
-.sb-stat-num{font-size:14px;font-weight:700;}
-.sb-stat-lbl{font-size:11px;color:#94a3b8;}
-
-/* ── ROLE BADGE ── */
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+*{box-sizing:border-box;}
+body{font-family:'Sarabun','Segoe UI',sans-serif;font-size:13px;background:#f1f5f9;margin:0;}
+/* TOPBAR */
+#topbar{position:fixed;top:0;left:0;right:0;height:52px;z-index:300;
+  background:linear-gradient(135deg,#1a3a6e 0%,#2563ab 100%);
+  display:flex;align-items:center;padding:0 16px;gap:10px;color:#fff;}
+#topbar .brand{font-size:15px;font-weight:700;flex:1;}
+#topbar .brand small{font-size:11px;opacity:.75;display:block;font-weight:400;}
 .role-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
 .role-badge.viewer{background:#dbeafe;color:#1e40af;}
 .role-badge.admin{background:#dcfce7;color:#166534;}
-
-/* ── ROLE TAB (Login) ── */
+/* STATS BAR */
+#statsBar{position:fixed;top:52px;left:220px;right:0;height:44px;
+  background:#fff;border-bottom:1px solid #e2e8f0;
+  display:none;align-items:center;padding:0 16px;
+  z-index:199;transition:left .25s ease;overflow-x:auto;}
+#statsBar.wide{left:52px;}
+.sb-stat{display:flex;align-items:center;gap:5px;padding:0 12px;white-space:nowrap;border-right:1px solid #f1f5f9;}
+.sb-stat-num{font-size:14px;font-weight:700;}
+.sb-stat-lbl{font-size:11px;color:#94a3b8;}
+/* SIDEBAR */
+#sidebar{position:fixed;top:52px;left:0;bottom:0;width:220px;z-index:200;
+  background:#1e293b;color:#cbd5e1;overflow-y:auto;
+  transition:width .2s ease;padding-bottom:20px;}
+#sidebar.collapsed{width:52px;}
+#sidebar.collapsed .nav-label,#sidebar.collapsed .nav-section-label{display:none;}
+#sidebar.collapsed .nav-item{justify-content:center;padding:10px 0;}
+.nav-section-label{font-size:10px;font-weight:700;color:#475569;letter-spacing:1px;
+  text-transform:uppercase;padding:14px 16px 4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;
+  cursor:pointer;color:#94a3b8;font-size:13px;transition:all .15s;
+  border-left:3px solid transparent;}
+.nav-item:hover{background:#334155;color:#e2e8f0;}
+.nav-item.active{background:#1e40af22;color:#60a5fa;border-left-color:#60a5fa;}
+.nav-item i{font-size:16px;flex-shrink:0;}
+#toggleBtn{display:flex;align-items:center;gap:10px;padding:10px 16px;
+  cursor:pointer;color:#475569;font-size:13px;border-bottom:1px solid #334155;margin-bottom:8px;}
+#toggleBtn:hover{color:#94a3b8;}
+/* MAIN */
+#appMain{margin-left:220px;padding:112px 20px 24px;transition:margin-left .2s ease;min-height:100vh;}
+#appMain.wide{margin-left:52px;}
+.page-section{display:none;}
+.page-section.active{display:block;}
+.page-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.page-title{font-size:17px;font-weight:700;color:#1e293b;flex:1;}
+.page-subtitle{font-size:12px;color:#64748b;}
+/* TABLE */
+.tbl-wrap{overflow-x:auto;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+table.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+table.data-table th{background:#1a3a6e;color:#fff;padding:8px 10px;white-space:nowrap;position:sticky;top:0;z-index:5;font-weight:600;}
+table.data-table td{padding:5px 10px;border-bottom:1px solid #f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;}
+table.data-table tr:hover td{background:#f8fafc;}
+.search-box{border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:12px;min-width:200px;}
+.btn-edit,.btn-del{border:none;border-radius:6px;padding:3px 7px;cursor:pointer;font-size:11px;}
+.btn-edit{background:#eff6ff;color:#1d4ed8;}
+.btn-del{background:#fff1f2;color:#be123c;}
+.btn-edit:hover{background:#dbeafe;}
+.btn-del:hover{background:#ffe4e6;}
+.modal-label{font-size:11px;color:#64748b;margin-bottom:2px;}
+/* ROLE VISIBILITY */
+body.role-viewer .admin-only,body.role-viewer .btn-edit,body.role-viewer .btn-del{display:none!important;}
+/* LOADING OVERLAY */
+#loadOverlay{position:fixed;inset:0;
+  background:linear-gradient(135deg,rgba(10,18,36,.95) 0%,rgba(26,58,110,.95) 100%);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  z-index:9999;display:flex;align-items:center;justify-content:center;}
+.lov-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);
+  border-radius:22px;padding:38px 48px;min-width:310px;max-width:370px;
+  text-align:center;color:#fff;box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.lov-icon{font-size:3rem;margin-bottom:14px;display:block;
+  animation:lovFloat 2.4s ease-in-out infinite;}
+@keyframes lovFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.08)}}
+.lov-title{font-size:15px;font-weight:700;margin-bottom:20px;letter-spacing:.4px;opacity:.95;}
+.lov-bar-wrap{background:rgba(255,255,255,.14);border-radius:99px;height:7px;margin-bottom:6px;overflow:hidden;}
+.lov-bar{height:100%;background:linear-gradient(90deg,#60a5fa 0%,#34d399 100%);
+  border-radius:99px;width:0%;transition:width .55s cubic-bezier(.4,0,.2,1);}
+.lov-pct{font-size:11px;opacity:.55;margin-bottom:18px;letter-spacing:.3px;}
+.lov-steps{display:flex;flex-direction:column;gap:6px;text-align:left;}
+.lov-step{display:flex;align-items:center;gap:9px;font-size:12px;
+  color:rgba(255,255,255,.3);transition:color .35s,font-weight .35s;}
+.lov-step.active{color:#fff;font-weight:700;}
+.lov-step.done{color:rgba(255,255,255,.65);}
+.lov-step-ico{font-size:13px;width:18px;text-align:center;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin{animation:spin .7s linear infinite;}
+/* MAP PAGE */
+#page-mappage{padding:0;}
+.map-wrap{display:flex;height:calc(100vh - 96px);border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12);}
+#map{flex:1;min-width:0;}
+.map-sidebar{width:460px;flex-shrink:0;background:#fff;display:flex;flex-direction:column;overflow:hidden;}
+.map-tabs{display:flex;border-bottom:2px solid #e2e8f0;background:#f8fafc;}
+.map-tab-btn{flex:1;padding:10px 4px;border:none;background:none;cursor:pointer;font-size:11px;font-weight:600;color:#64748b;transition:all .2s;}
+.map-tab-btn.active{color:#1a3a6e;border-bottom:2px solid #1a3a6e;margin-bottom:-2px;background:#fff;}
+.map-tab-content{flex:1;overflow-y:auto;padding:12px;display:none;}
+.map-tab-content.active{display:block;}
+.map-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.map-stat-card{background:#f0f7ff;border-radius:8px;padding:8px 10px;text-align:center;}
+.map-stat-card .val{font-size:1.1rem;font-weight:700;color:#1a3a6e;}
+.map-stat-card .lbl{font-size:10px;color:#64748b;margin-top:2px;}
+#osrmLoadBar{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;
+  padding:8px 12px;margin-bottom:10px;font-size:11px;color:#856404;
+  display:flex;align-items:center;gap:8px;}
+.osrm-spin{width:14px;height:14px;border:2px solid #ffc107;border-top-color:#856404;
+  border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;}
+table.dist-tbl{width:100%;border-collapse:collapse;font-size:11px;}
+table.dist-tbl th{background:#1a3a6e;color:#fff;padding:7px 6px;text-align:left;position:sticky;top:0;z-index:5;}
+table.dist-tbl td{padding:6px 6px;border-bottom:1px solid #e2e8f0;vertical-align:top;}
+table.dist-tbl tr:hover td{background:#f0f7ff;}
+tr.dist-hl td{background:#dbeafe!important;}
+.seg-num{background:#1a3a6e;color:#fff;border-radius:50%;width:20px;height:20px;
+  display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.from-name{color:#16a34a;font-weight:600;}
+.to-name{color:#dc2626;font-weight:600;}
+.d-straight{color:#64748b;font-weight:600;}
+.d-road{color:#1a3a6e;font-weight:700;}
+.d-road.loading{color:#aaa;font-style:italic;}
+.d-road.error{color:#dc2626;font-size:10px;}
+.calc-select{width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;margin-bottom:8px;background:#f8fafc;}
+.calc-run-btn{width:100%;padding:9px;background:#1a3a6e;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+.calc-run-btn:hover{background:#2563ab;}
+.calc-run-btn:disabled{background:#94a3b8;cursor:not-allowed;}
+.calc-result{margin-top:12px;background:#f0f7ff;border-radius:10px;padding:12px;display:none;}
+.calc-result .r-title{font-weight:700;color:#1a3a6e;margin-bottom:8px;font-size:12px;}
+.calc-result .r-row{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px;}
+.calc-result .r-val{font-weight:700;color:#2563ab;}
+.gmaps-btn{display:block;margin-top:10px;text-align:center;background:#16a34a;color:#fff;
+  border-radius:8px;padding:7px;font-size:12px;font-weight:600;text-decoration:none;}
+.gmaps-btn:hover{background:#15803d;color:#fff;}
+.point-item{display:flex;align-items:flex-start;gap:10px;padding:8px 6px;border-bottom:1px solid #e2e8f0;cursor:pointer;transition:background .15s;}
+.point-item:hover{background:#f0f7ff;}
+.point-num{background:#1a3a6e;color:#fff;border-radius:50%;width:22px;height:22px;
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:2px;}
+.point-info .p-name{font-size:12px;font-weight:600;color:#1a202c;}
+.point-info .p-coord{font-size:10px;color:#94a3b8;}
+#swPickBanner{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:#1a3a6e;color:#fff;border-radius:12px;padding:12px 24px;z-index:9000;
+  align-items:center;gap:12px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.3);}
+.map-legend{background:rgba(255,255,255,.92);backdrop-filter:blur(4px);border-radius:8px;
+  padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:11px;min-width:130px;}
+.map-legend-title{font-weight:700;color:#1a3a6e;margin-bottom:4px;}
+.map-legend-item{display:flex;align-items:center;gap:6px;margin-bottom:3px;}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a 0%,#1a3a6e 100%);
+  display:flex;align-items:center;justify-content:center;z-index:1000;}
+.login-card{background:#fff;border-radius:20px;padding:40px 36px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.login-logo{font-size:42px;text-align:center;margin-bottom:8px;}
+.login-title{font-size:18px;font-weight:800;text-align:center;color:#1a3a6e;}
+.login-sub{font-size:12px;text-align:center;color:#64748b;margin-bottom:24px;}
 .role-tab{flex:1;padding:10px 0;border:2px solid #e2e8f0;background:#f8fafc;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:#64748b;transition:all .15s;}
 .role-tab.active{border-color:#1a3a6e;background:#eff6ff;color:#1a3a6e;}
-
-/* ── ROLE-BASED VISIBILITY ── */
-body.role-viewer .admin-only,
-body.role-viewer .btn-edit,
-body.role-viewer .btn-del{display:none!important;}
-
-/* ── TABLE SECTION ── */
-.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
-.section-title{font-size:1rem;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:8px;}
-.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
-.filter-bar input,.filter-bar select{height:34px;font-size:13px;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;}
-.filter-bar input{min-width:220px;}
-.tbl-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;}
-.tbl-scroll{overflow-x:auto;max-height:calc(100vh - 260px);overflow-y:auto;}
-.table{margin:0;font-size:12px;}
-.table th{background:#f8fafc;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;border-bottom:2px solid #e2e8f0;white-space:nowrap;position:sticky;top:0;z-index:1;}
-.table td{padding:5px 10px;font-size:12px;vertical-align:middle;border-color:#f1f5f9;white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;}
-.table tbody tr:hover{background:#f8fafc;}
-/* ── ให้ btn-edit/del ใน td ไม่ถูก ellipsis clip ── */
-.table td:last-child{max-width:none;overflow:visible;}
-.btn-edit{background:#eff6ff;color:#2563eb;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;}
-.btn-edit:hover{background:#dbeafe;}
-.btn-del{background:#fef2f2;color:#dc2626;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;}
-.btn-del:hover{background:#fee2e2;}
-.pager{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-top:1px solid #f1f5f9;font-size:12px;color:#94a3b8;}
-.pager-btns{display:flex;gap:4px;}
-.pager-btn{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;color:#475569;}
-.pager-btn:hover:not([disabled]){background:#e2e8f0;}
-.pager-btn[disabled]{opacity:.4;cursor:not-allowed;}
-.pager-cur{background:#1d4ed8;color:#fff;border-color:#1d4ed8;border-radius:6px;padding:3px 10px;font-size:12px;}
-
-/* ── MAP ── */
-#map{height:520px;border-radius:12px;border:1px solid #e2e8f0;}
-.map-legend{background:#fff;border-radius:8px;padding:10px 14px;font-size:12px;border:1px solid #e2e8f0;margin-top:12px;}
-
-/* ── MODAL ── */
-.modal-header{background:#1a3a6e;}
-.modal-title{color:#fff!important;font-size:.95rem;}
-.modal-body .row{--bs-gutter-y:.5rem;}
-.modal-label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;}
-
-/* ── LOADING ── */
-#loader{position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:8000;}
-
-/* ── TOASTS ── */
-#toastBox{position:fixed;top:62px;right:16px;z-index:9000;display:flex;flex-direction:column;gap:6px;}
-.t-toast{padding:10px 16px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);animation:tIn .2s ease;}
-@keyframes tIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
-.t-success{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;}
-.t-danger{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;}
-.t-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;}
-.t-warning{background:#fffbeb;border:1px solid #fed7aa;color:#92400e;}
-
-/* ── SPIN ── */
-.spin{animation:sp 1s linear infinite;}
-@keyframes sp{to{transform:rotate(360deg);}}
-
-/* ── BADGE ── */
-.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
-.tag-blue{background:#dbeafe;color:#1e40af;}
-.tag-green{background:#dcfce7;color:#166534;}
-.tag-orange{background:#ffedd5;color:#c2410c;}
-
-/* ── COMPACT TABLE (computer / laptop) ── */
-#tbl-computer td,#tbl-laptop td{padding:3px 6px;font-size:11px;max-width:160px;}
-#tbl-computer th,#tbl-laptop th{padding:6px 6px;font-size:9.5px;}
-
+/* TOAST */
+#toastBox{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:6px;}
+.t-toast{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;font-size:13px;min-width:220px;max-width:340px;box-shadow:0 4px 16px rgba(0,0,0,.15);animation:slideIn .25s ease;}
+@keyframes slideIn{from{transform:translateX(60px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.t-success{background:#f0fdf4;color:#166534;border-left:4px solid #22c55e;}
+.t-danger{background:#fff1f2;color:#be123c;border-left:4px solid #f43f5e;}
+.t-warning{background:#fffbeb;color:#92400e;border-left:4px solid #f59e0b;}
+.t-info{background:#eff6ff;color:#1e40af;border-left:4px solid #3b82f6;}
 </style>
 </head>
 <body>
 
-<!-- ════════ LOGIN SCREEN ════════ -->
+<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
-    <div class="login-logo"><i class="bi bi-shield-lock-fill"></i></div>
-    <div class="login-title">ระบบบริหารข้อมูล IT</div>
-    <div class="login-sub">กองบิน 2 · ปีงบประมาณ 2569</div>
+    <div class="login-logo">✈️</div>
+    <div class="login-title">กองบิน 2</div>
+    <div class="login-sub">ระบบบริหารข้อมูล IT</div>
     <div class="d-flex gap-2 mb-3">
-      <button class="role-tab active" id="tab-viewer" onclick="selectRole('viewer')">
-        <i class="bi bi-eye-fill me-1"></i>Viewer
-      </button>
-      <button class="role-tab" id="tab-admin" onclick="selectRole('admin')">
-        <i class="bi bi-shield-lock-fill me-1"></i>Admin
-      </button>
+      <button class="role-tab active" id="tab-viewer" onclick="selectRole('viewer')"><i class="bi bi-eye-fill me-1"></i>Viewer</button>
+      <button class="role-tab" id="tab-admin" onclick="selectRole('admin')"><i class="bi bi-shield-lock-fill me-1"></i>Admin</button>
     </div>
-    <div class="mb-3">
-      <label class="form-label fw-semibold small text-secondary">รหัสผ่าน</label>
-      <div class="input-group">
-        <input type="password" class="form-control" id="pwInput" placeholder="กรอกรหัสผ่าน" onkeydown="if(event.key==='Enter')doLogin()">
-        <button class="btn btn-outline-secondary" type="button" onclick="togglePw()"><i class="bi bi-eye" id="eyeIcon"></i></button>
-      </div>
+    <div class="mb-2">
+      <div class="modal-label">รหัสผ่าน</div>
+      <input type="password" id="pwInput" class="form-control form-control-sm" placeholder="กรอกรหัสผ่าน" onkeydown="if(event.key==='Enter')doLogin()"/>
     </div>
-    <div id="loginErr" class="alert alert-danger py-2 small d-none">รหัสผ่านไม่ถูกต้อง</div>
-    <button class="btn w-100 py-2 fw-semibold text-white" style="background:#1a3a6e;border-radius:10px" onclick="doLogin()">
-      <i class="bi bi-box-arrow-in-right me-2"></i>เข้าสู่ระบบ
-    </button>
-    <div class="text-center mt-3" style="font-size:11px;color:#cbd5e1;">ระบบเทคโนโลยีสารสนเทศ · บน.2</div>
+    <div id="loginErr" class="alert alert-danger py-1 px-2 mb-2 d-none" style="font-size:12px">รหัสผ่านไม่ถูกต้อง</div>
+    <button class="btn btn-primary w-100 fw-bold" onclick="doLogin()"><i class="bi bi-box-arrow-in-right me-1"></i>เข้าสู่ระบบ</button>
   </div>
 </div>
 
-<!-- ════════ APP SHELL (hidden until login) ════════ -->
+<!-- APP SHELL -->
 <div id="appShell" style="display:none">
-
-<!-- TOPBAR -->
-<div id="topbar">
-  <button id="toggleSidebar" onclick="toggleSB()"><i class="bi bi-list"></i></button>
-  <div class="topbar-brand"><i class="bi bi-shield-check me-2" style="color:#1a3a6e"></i>ระบบ IT บน.2 · ปีงบ 69</div>
-  <div class="topbar-right">
-    <span id="roleBadge" class="role-badge"></span>
-    <span class="sync-time" id="syncTime"></span>
-    <button class="btn-sync" onclick="syncAll()">
-      <i class="bi bi-arrow-repeat" id="syncIcon"></i>ซิงค์ข้อมูล
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border:none;padding:4px 8px" onclick="toggleSB()">
+      <i class="bi bi-list" style="font-size:18px"></i>
     </button>
-    <button class="btn-sync" onclick="doLogout()" title="ออกจากระบบ"><i class="bi bi-box-arrow-right"></i></button>
+    <div class="brand">กองบิน 2<small>ระบบบริหารข้อมูล IT</small></div>
+    <span id="roleBadge" class="role-badge"></span>
+    <span id="syncTime" style="font-size:11px;opacity:.7"></span>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border:none" onclick="syncAll()" title="ซิงค์ข้อมูล"><i id="syncIcon" class="bi bi-arrow-clockwise"></i></button>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border:none" onclick="doLogout()"><i class="bi bi-box-arrow-right"></i></button>
+  </div>
+  <!-- STATS BAR -->
+  <div id="statsBar"></div>
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div id="toggleBtn" onclick="toggleSB()">
+      <i class="bi bi-layout-sidebar-inset" style="font-size:16px;flex-shrink:0"></i>
+      <span class="nav-label">ย่อเมนู</span>
+    </div>
+    <div class="nav-section-label">ข้อมูลหลัก</div>
+    <div class="nav-item active" data-page="personnel" onclick="nav(this)"><i class="bi bi-people-fill"></i><span class="nav-label">บุคลากร</span></div>
+    <div class="nav-item" data-page="computer" onclick="nav(this)"><i class="bi bi-pc-display"></i><span class="nav-label">คอมพิวเตอร์</span></div>
+    <div class="nav-item" data-page="laptop" onclick="nav(this)"><i class="bi bi-laptop"></i><span class="nav-label">คอม (พกพา)</span></div>
+    <div class="nav-item" data-page="wifi" onclick="nav(this)"><i class="bi bi-wifi"></i><span class="nav-label">WiFi / AP</span></div>
+    <div class="nav-item" data-page="network" onclick="nav(this)"><i class="bi bi-hdd-network"></i><span class="nav-label">Switch / อื่นๆ</span></div>
+    <div class="nav-section-label">แผนที่</div>
+    <div class="nav-item" data-page="mappage" onclick="nav(this)"><i class="bi bi-geo-alt-fill"></i><span class="nav-label">แผนที่ Switch</span></div>
+  </div>
+  <!-- MAIN -->
+  <div id="appMain">
+    <!-- Personnel -->
+    <div id="page-personnel" class="page-section active">
+      <div class="page-header">
+        <div><div class="page-title"><i class="bi bi-people-fill me-2 text-primary"></i>บุคลากร</div><div class="page-subtitle" id="cnt-personnel"></div></div>
+        <input class="search-box" placeholder="🔍 ค้นหา…" oninput="renderTable('personnel',this.value)"/>
+        <button class="btn btn-success btn-sm admin-only" onclick="addRow('personnel')"><i class="bi bi-plus-lg me-1"></i>เพิ่ม</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="exportCSV('personnel')"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
+        <button class="btn btn-outline-success btn-sm" onclick="exportXLSX('personnel')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+      </div>
+      <div class="tbl-wrap"><table class="data-table"><thead><tr id="thead-personnel"></tr></thead><tbody id="tbody-personnel"></tbody></table></div>
+    </div>
+    <!-- Computer -->
+    <div id="page-computer" class="page-section">
+      <div class="page-header">
+        <div><div class="page-title"><i class="bi bi-pc-display me-2 text-success"></i>คอมพิวเตอร์</div><div class="page-subtitle" id="cnt-computer"></div></div>
+        <input class="search-box" placeholder="🔍 ค้นหา…" oninput="renderTable('computer',this.value)"/>
+        <button class="btn btn-success btn-sm admin-only" onclick="addRow('computer')"><i class="bi bi-plus-lg me-1"></i>เพิ่ม</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="exportCSV('computer')"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
+        <button class="btn btn-outline-success btn-sm" onclick="exportXLSX('computer')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+      </div>
+      <div class="tbl-wrap"><table class="data-table"><thead><tr id="thead-computer"></tr></thead><tbody id="tbody-computer"></tbody></table></div>
+    </div>
+    <!-- Laptop -->
+    <div id="page-laptop" class="page-section">
+      <div class="page-header">
+        <div><div class="page-title"><i class="bi bi-laptop me-2 text-warning"></i>คอมพิวเตอร์ (พกพา)</div><div class="page-subtitle" id="cnt-laptop"></div></div>
+        <input class="search-box" placeholder="🔍 ค้นหา…" oninput="renderTable('laptop',this.value)"/>
+        <button class="btn btn-success btn-sm admin-only" onclick="addRow('laptop')"><i class="bi bi-plus-lg me-1"></i>เพิ่ม</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="exportCSV('laptop')"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
+        <button class="btn btn-outline-success btn-sm" onclick="exportXLSX('laptop')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+      </div>
+      <div class="tbl-wrap"><table class="data-table"><thead><tr id="thead-laptop"></tr></thead><tbody id="tbody-laptop"></tbody></table></div>
+    </div>
+    <!-- WiFi -->
+    <div id="page-wifi" class="page-section">
+      <div class="page-header">
+        <div><div class="page-title"><i class="bi bi-wifi me-2" style="color:#7c3aed"></i>WiFi / Access Point</div><div class="page-subtitle" id="cnt-wifi"></div></div>
+        <input class="search-box" placeholder="🔍 ค้นหา…" oninput="renderTable('wifi',this.value)"/>
+        <button class="btn btn-success btn-sm admin-only" onclick="addRow('wifi')"><i class="bi bi-plus-lg me-1"></i>เพิ่ม</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="exportCSV('wifi')"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
+        <button class="btn btn-outline-success btn-sm" onclick="exportXLSX('wifi')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+      </div>
+      <div class="tbl-wrap"><table class="data-table"><thead><tr id="thead-wifi"></tr></thead><tbody id="tbody-wifi"></tbody></table></div>
+    </div>
+    <!-- Network -->
+    <div id="page-network" class="page-section">
+      <div class="page-header">
+        <div><div class="page-title"><i class="bi bi-hdd-network me-2" style="color:#be123c"></i>Switch / อุปกรณ์เครือข่าย</div><div class="page-subtitle" id="cnt-network"></div></div>
+        <input class="search-box" placeholder="🔍 ค้นหา…" oninput="renderTable('network',this.value)"/>
+        <button class="btn btn-success btn-sm admin-only" onclick="addRow('network')"><i class="bi bi-plus-lg me-1"></i>เพิ่ม</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="exportCSV('network')"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
+        <button class="btn btn-outline-success btn-sm" onclick="exportXLSX('network')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+      </div>
+      <div class="tbl-wrap"><table class="data-table"><thead><tr id="thead-network"></tr></thead><tbody id="tbody-network"></tbody></table></div>
+    </div>
+    <!-- MAP PAGE -->
+    <div id="page-mappage" class="page-section">
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-sidebar">
+          <div class="map-tabs">
+            <button class="map-tab-btn active" data-tab="distances" onclick="mapTab('distances')">📏 ระยะทาง</button>
+            <button class="map-tab-btn" data-tab="calculator" onclick="mapTab('calculator')">🔢 คำนวณ</button>
+            <button class="map-tab-btn" data-tab="points" onclick="mapTab('points')">📍 จุดทั้งหมด</button>
+            <button class="map-tab-btn admin-only" data-tab="manage" onclick="mapTab('manage')">⚙️ จัดการ</button>
+          </div>
+          <!-- Tab: Distances -->
+          <div id="maptab-distances" class="map-tab-content active">
+            <div class="map-stats">
+              <div class="map-stat-card"><div class="val" id="ms-count">–</div><div class="lbl">จำนวนจุด</div></div>
+              <div class="map-stat-card"><div class="val" id="ms-straight">–</div><div class="lbl">รวมตรง (กม.)</div></div>
+              <div class="map-stat-card"><div class="val" id="ms-road">–</div><div class="lbl">รวมถนน (กม.)</div></div>
+            </div>
+            <div id="osrmLoadBar" style="display:none">
+              <div class="osrm-spin"></div>
+              <span id="osrmLoadText">กำลังโหลดระยะถนน…</span>
+            </div>
+            <table class="dist-tbl">
+              <thead><tr><th style="width:26px">#</th><th>จากจุด → ถึงจุด</th><th style="width:66px">ตรง (ม.)</th><th style="width:76px">ถนน (ม.)</th></tr></thead>
+              <tbody id="distTbody"></tbody>
+            </table>
+          </div>
+          <!-- Tab: Calculator -->
+          <div id="maptab-calculator" class="map-tab-content">
+            <h6 style="font-weight:700;color:#1a3a6e;margin-bottom:12px">คำนวณระยะระหว่าง 2 จุด</h6>
+            <div class="modal-label">จุดเริ่มต้น</div>
+            <select id="calcFrom" class="calc-select"></select>
+            <div class="modal-label">จุดปลายทาง</div>
+            <select id="calcTo" class="calc-select"></select>
+            <button class="calc-run-btn" id="calcBtn" onclick="calcDistance()">คำนวณระยะทาง</button>
+            <div class="calc-result" id="calcResult">
+              <div class="r-title" id="crTitle"></div>
+              <div class="r-row"><span>ระยะทางเส้นตรง</span><span class="r-val" id="crStraight"></span></div>
+              <div class="r-row"><span>ระยะทางตามถนน</span><span class="r-val" id="crRoad"></span></div>
+              <div class="r-row"><span>เวลาโดยประมาณ (รถ)</span><span class="r-val" id="crTime"></span></div>
+              <a class="gmaps-btn" id="crGmaps" href="#" target="_blank">🗺️ เปิดใน Google Maps</a>
+            </div>
+          </div>
+          <!-- Tab: Points -->
+          <div id="maptab-points" class="map-tab-content">
+            <div id="mapPointsList"></div>
+          </div>
+          <!-- Tab: Manage (admin) -->
+          <div id="maptab-manage" class="map-tab-content admin-only">
+            <button class="btn btn-success btn-sm w-100 mb-3" onclick="openAddSwitch()"><i class="bi bi-plus-lg me-1"></i>เพิ่ม Switch ใหม่</button>
+            <div class="tbl-wrap" style="max-height:420px;overflow-y:auto">
+              <table class="data-table" style="font-size:11px">
+                <thead><tr><th>#</th><th>ชื่อ/ตำแหน่ง</th><th>หมายเหตุ</th><th>พิกัด</th><th>จัดการ</th></tr></thead>
+                <tbody id="swTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- STATS BAR -->
-<div id="statsBar"></div>
-
-<!-- SIDEBAR -->
-<nav id="sidebar">
-  <div class="sb-section">ข้อมูลหลัก</div>
-  <a class="nav-lnk active" data-page="personnel" onclick="nav(this)">
-    <i class="bi bi-people icon"></i><span class="lbl">บุคลากร</span>
-  </a>
-  <a class="nav-lnk" data-page="computer" onclick="nav(this)">
-    <i class="bi bi-pc-display icon"></i><span class="lbl">สถานภาพคอมพิวเตอร์</span>
-  </a>
-  <a class="nav-lnk" data-page="laptop" onclick="nav(this)">
-    <i class="bi bi-laptop icon"></i><span class="lbl">คอมพิวเตอร์ (พกพา)</span>
-  </a>
-  <a class="nav-lnk" data-page="wifi" onclick="nav(this)">
-    <i class="bi bi-wifi icon"></i><span class="lbl">อุปกรณ์เครือข่าย (WiFi)</span>
-  </a>
-  <a class="nav-lnk" data-page="network" onclick="nav(this)">
-    <i class="bi bi-hdd-network icon"></i><span class="lbl">อุปกรณ์เครือข่าย</span>
-  </a>
-  <div class="sb-section">เครื่องมือ</div>
-  <a class="nav-lnk" data-page="mappage" onclick="nav(this)">
-    <i class="bi bi-map icon"></i><span class="lbl">แผนที่ Switch</span>
-  </a>
-</nav>
-
-<!-- MAIN -->
-<div id="appMain">
-
-  <!-- ── PERSONNEL ── -->
-  <div id="page-personnel" class="page">
-    <div class="section-head">
-      <div class="section-title"><i class="bi bi-people" style="color:#1a3a6e"></i>บุคลากร</div>
-      <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-success admin-only" onclick="addRow('personnel')"><i class="bi bi-plus-lg me-1"></i>เพิ่ม</button>
-        <button class="btn btn-sm btn-outline-secondary" onclick="exportCSV('personnel')"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
-        <button class="btn btn-sm btn-outline-success" onclick="exportXLSX('personnel')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
-      </div>
-    </div>
-    <div class="filter-bar">
-      <input id="srch-personnel" placeholder="🔍 ค้นหา..." oninput="applyFilter('personnel')">
-      <select id="flt-personnel" onchange="applyFilter('personnel')"><option value="">- ทุกหน่วยหลัก -</option></select>
-    </div>
-    <div class="tbl-card"><div class="tbl-scroll"><table class="table table-hover" id="tbl-personnel"><thead></thead><tbody></tbody></table></div>
-    <div class="pager" id="pgr-personnel"></div></div>
-  </div>
-
-  <!-- ── COMPUTER ── -->
-  <div id="page-computer" class="page">
-    <div class="section-head">
-      <div class="section-title"><i class="bi bi-pc-display" style="color:#1a3a6e"></i>สถานภาพคอมพิวเตอร์</div>
-      <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-success admin-only" onclick="addRow('computer')"><i class="bi bi-plus-lg me-1"></i>เพิ่ม</button>
-        <button class="btn btn-sm btn-outline-secondary" onclick="exportCSV('computer')"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
-        <button class="btn btn-sm btn-outline-success" onclick="exportXLSX('computer')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
-      </div>
-    </div>
-    <div class="filter-bar">
-      <input id="srch-computer" placeholder="🔍 ค้นหา..." oninput="applyFilter('computer')">
-      <select id="flt-computer" onchange="applyFilter('computer')"><option value="">- ทุกหน่วยหลัก -</option></select>
-    </div>
-    <div class="tbl-card"><div class="tbl-scroll"><table class="table table-hover" id="tbl-computer"><thead></thead><tbody></tbody></table></div>
-    <div class="pager" id="pgr-computer"></div></div>
-  </div>
-
-  <!-- ── LAPTOP ── -->
-  <div id="page-laptop" class="page">
-    <div class="section-head">
-      <div class="section-title"><i class="bi bi-laptop" style="color:#1a3a6e"></i>สถานภาพคอมพิวเตอร์ (พกพา)</div>
-      <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-success admin-only" onclick="addRow('laptop')"><i class="bi bi-plus-lg me-1"></i>เพิ่ม</button>
-        <button class="btn btn-sm btn-outline-secondary" onclick="exportCSV('laptop')"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
-        <button class="btn btn-sm btn-outline-success" onclick="exportXLSX('laptop')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
-      </div>
-    </div>
-    <div class="filter-bar">
-      <input id="srch-laptop" placeholder="🔍 ค้นหา..." oninput="applyFilter('laptop')">
-      <select id="flt-laptop" onchange="applyFilter('laptop')"><option value="">- ทุกหน่วยหลัก -</option></select>
-    </div>
-    <div class="tbl-card"><div class="tbl-scroll"><table class="table table-hover" id="tbl-laptop"><thead></thead><tbody></tbody></table></div>
-    <div class="pager" id="pgr-laptop"></div></div>
-  </div>
-
-  <!-- ── WIFI ── -->
-  <div id="page-wifi" class="page">
-    <div class="section-head">
-      <div class="section-title"><i class="bi bi-wifi" style="color:#1a3a6e"></i>สถานภาพอุปกรณ์เครือข่าย (WiFi)</div>
-      <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-success admin-only" onclick="addRow('wifi')"><i class="bi bi-plus-lg me-1"></i>เพิ่ม</button>
-        <button class="btn btn-sm btn-outline-secondary" onclick="exportCSV('wifi')"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
-        <button class="btn btn-sm btn-outline-success" onclick="exportXLSX('wifi')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
-      </div>
-    </div>
-    <div class="filter-bar">
-      <input id="srch-wifi" placeholder="🔍 ค้นหา..." oninput="applyFilter('wifi')">
-    </div>
-    <div class="tbl-card"><div class="tbl-scroll"><table class="table table-hover" id="tbl-wifi"><thead></thead><tbody></tbody></table></div>
-    <div class="pager" id="pgr-wifi"></div></div>
-  </div>
-
-  <!-- ── NETWORK ── -->
-  <div id="page-network" class="page">
-    <div class="section-head">
-      <div class="section-title"><i class="bi bi-hdd-network" style="color:#1a3a6e"></i>สถานภาพอุปกรณ์เครือข่าย</div>
-      <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-success admin-only" onclick="addRow('network')"><i class="bi bi-plus-lg me-1"></i>เพิ่ม</button>
-        <button class="btn btn-sm btn-outline-secondary" onclick="exportCSV('network')"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
-        <button class="btn btn-sm btn-outline-success" onclick="exportXLSX('network')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
-      </div>
-    </div>
-    <div class="filter-bar">
-      <input id="srch-network" placeholder="🔍 ค้นหา..." oninput="applyFilter('network')">
-    </div>
-    <div class="tbl-card"><div class="tbl-scroll"><table class="table table-hover" id="tbl-network"><thead></thead><tbody></tbody></table></div>
-    <div class="pager" id="pgr-network"></div></div>
-  </div>
-
-  <!-- ── MAP ── -->
-  <div id="page-mappage" class="page">
-    <div class="section-head">
-      <div class="section-title"><i class="bi bi-map" style="color:#1a3a6e"></i>แผนที่ตำแหน่ง Switch · ภาพดาวเทียม</div>
-      <button class="btn btn-sm btn-success admin-only" onclick="openAddSwitch()"><i class="bi bi-plus-lg me-1"></i>เพิ่ม Switch</button>
-    </div>
-    <div id="map"></div>
-    <!-- Pick-coords banner -->
-    <div id="swPickBanner" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a3a6e;color:#fff;padding:12px 28px;border-radius:12px;z-index:1001;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.4);white-space:nowrap;">
-      <i class="bi bi-crosshair2 me-2"></i>คลิกบนแผนที่เพื่อเลือกพิกัด
-      <button onclick="cancelPickCoords()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer;margin-left:8px;">ยกเลิก</button>
-    </div>
-    <div class="map-legend mt-3">
-      <div class="fw-semibold mb-2">รายชื่อ Switch ทั้งหมด <span id="swCount" class="badge bg-primary ms-1">0</span> ตำแหน่ง</div>
-      <div style="overflow-x:auto;max-height:300px">
-        <table class="table table-sm table-hover mb-0">
-          <thead><tr><th>#</th><th>ชื่อ/ตำแหน่ง</th><th>หมายเหตุ</th><th>พิกัด</th><th class="admin-only">จัดการ</th></tr></thead>
-          <tbody id="swTbody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-
-</div><!-- /appMain -->
-</div><!-- /appShell -->
-
-<!-- LOADER -->
-<div id="loader" style="display:none">
-  <div class="spinner-border text-primary" style="width:2.5rem;height:2.5rem;"></div>
-  <div style="font-weight:600;color:#1a3a6e">กำลังโหลดข้อมูล...</div>
-  <div style="font-size:12px;color:#94a3b8">กำลังเชื่อมต่อ Google Sheets</div>
-</div>
-
-<!-- EDIT MODAL -->
+<!-- MODALS -->
 <div class="modal fade" id="editModal" tabindex="-1">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <div class="modal-header py-2"><h5 class="modal-title" id="mTitle">แก้ไขข้อมูล</h5>
-        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body p-3" id="mBody"></div>
-      <div class="modal-footer py-2">
-        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">ยกเลิก</button>
-        <button class="btn btn-primary btn-sm" onclick="saveRecord()"><i class="bi bi-save me-1"></i>บันทึก</button>
-      </div>
+      <div class="modal-header py-2"><h6 class="modal-title fw-bold" id="mTitle">แก้ไขข้อมูล</h6><button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body" id="mBody"></div>
+      <div class="modal-footer py-2"><button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">ยกเลิก</button><button class="btn btn-primary btn-sm" onclick="saveRecord()"><i class="bi bi-floppy me-1"></i>บันทึก</button></div>
     </div>
   </div>
 </div>
-
-<!-- SWITCH MODAL -->
 <div class="modal fade" id="swModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-sm">
     <div class="modal-content">
-      <div class="modal-header py-2"><h5 class="modal-title" id="swModalTitle">เพิ่ม Switch ใหม่</h5>
-        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body p-3">
-        <div class="mb-3">
-          <div class="modal-label">ชื่อ / ตำแหน่ง <span class="text-danger">*</span></div>
-          <input class="form-control form-control-sm" id="swName" placeholder="เช่น SW L2 อาคาร 1">
+      <div class="modal-header py-2"><h6 class="modal-title fw-bold" id="swModalTitle">เพิ่ม Switch</h6><button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2"><div class="modal-label">ชื่อ/ตำแหน่ง *</div><input id="swName" class="form-control form-control-sm" placeholder="เช่น บก.บน.2"/></div>
+        <div class="mb-2"><div class="modal-label">รายละเอียด</div><input id="swDesc" class="form-control form-control-sm"/></div>
+        <div class="row g-2 mb-2">
+          <div class="col-6"><div class="modal-label">Latitude *</div><input id="swLat" class="form-control form-control-sm" type="number" step="any"/></div>
+          <div class="col-6"><div class="modal-label">Longitude *</div><input id="swLng" class="form-control form-control-sm" type="number" step="any"/></div>
         </div>
-        <div class="mb-3">
-          <div class="modal-label">หมายเหตุ</div>
-          <input class="form-control form-control-sm" id="swDesc" placeholder="เช่น Rack 12u, Cisco C3850">
-        </div>
-        <div class="row g-2 mb-3">
-          <div class="col">
-            <div class="modal-label">Latitude <span class="text-danger">*</span></div>
-            <input class="form-control form-control-sm" id="swLat" type="number" step="any" placeholder="14.XXXXXX">
-          </div>
-          <div class="col">
-            <div class="modal-label">Longitude <span class="text-danger">*</span></div>
-            <input class="form-control form-control-sm" id="swLng" type="number" step="any" placeholder="100.XXXXXX">
-          </div>
-        </div>
-        <button class="btn btn-outline-primary btn-sm w-100" onclick="pickCoordsFromMap()">
-          <i class="bi bi-crosshair me-1"></i>เลือกพิกัดโดยคลิกบนแผนที่
-        </button>
+        <button class="btn btn-outline-secondary btn-sm w-100" onclick="pickCoordsFromMap()"><i class="bi bi-geo-alt me-1"></i>เลือกพิกัดจากแผนที่</button>
       </div>
-      <div class="modal-footer py-2">
-        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">ยกเลิก</button>
-        <button class="btn btn-primary btn-sm" onclick="saveSwitch()"><i class="bi bi-save me-1"></i>บันทึก</button>
-      </div>
+      <div class="modal-footer py-2"><button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">ยกเลิก</button><button class="btn btn-primary btn-sm" onclick="saveSwitch()"><i class="bi bi-floppy me-1"></i>บันทึก</button></div>
     </div>
   </div>
 </div>
-
-<!-- TOAST BOX -->
+<div id="swPickBanner">
+  <i class="bi bi-geo-alt-fill"></i><span>คลิกบนแผนที่เพื่อเลือกพิกัด</span>
+  <button class="btn btn-sm btn-light ms-2" onclick="cancelPickCoords()">ยกเลิก</button>
+</div>
+<!-- Loading overlay -->
+<div id="loadOverlay" style="display:none">
+  <div class="lov-card">
+    <span class="lov-icon">✈️</span>
+    <div class="lov-title" id="lovMsg">กำลังโหลดข้อมูล…</div>
+    <div class="lov-bar-wrap"><div class="lov-bar" id="lovBar"></div></div>
+    <div class="lov-pct" id="lovPct">0%</div>
+    <div class="lov-steps" id="lovSteps"></div>
+  </div>
+</div>
 <div id="toastBox"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script>
-// ════════════════════════════════════════════
-//  CONFIG & STATE
-// ════════════════════════════════════════════
-
-// ── Google Apps Script Web App URL (สำหรับ GitHub Pages deploy) ──────
-// วิธีรับ URL: Apps Script → Deploy → New deployment → Web app
-// แล้ว copy URL มาใส่ที่นี่
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWWlrxwvYQN2VYuJh_HkW9J0iqZeZEPJsT4ra5dXbFE8iM09dmbi_VSRmAr0cF_HU/exec';
-
-const PASSWORDS = { viewer: 'W2ICT.2026V', admin: 'W2ICT.2026A' };
-let userRole     = 'viewer';   // 'viewer' | 'admin'
-let selectedRole = 'viewer';   // role ที่เลือกในหน้า login
-
-// ── API helpers (fetch-based สำหรับ GitHub Pages) ────────────────────
-function callApi(action) {
-  const url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
-  return fetch(url, {redirect:'follow'}).then(r => r.json());
-}
-function postApi(data) {
-  return fetch(SCRIPT_URL, {
-    method: 'POST',
-    headers: {'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify(data),
-    redirect: 'follow'
-  }).then(r => r.json());
-}
-
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz2lbJ5z1xMo9fe0EbwbM3V3owUYRUM37PvecptSAbznaVYl0vYb5KAqG5ZPN54fH9MPg/exec';
+const PASSWORDS  = { viewer:'W2ICT.2026V', admin:'W2ICT.2026A' };
 const PAGE_CFG = {
-  personnel: { icon:'bi-people',     label:'บุคลากร',                    sheetKey:null, viewMode:'full' },
-  computer:  { icon:'bi-pc-display', label:'คอมพิวเตอร์',               sheetKey:null, viewMode:'computer' },
-  laptop:    { icon:'bi-laptop',     label:'คอมพิวเตอร์ (พกพา)',         sheetKey:null, viewMode:'computer' },
-  wifi:      { icon:'bi-wifi',       label:'อุปกรณ์เครือข่าย (WiFi)',    sheetKey:null, viewMode:'network' },
-  network:   { icon:'bi-hdd-network',label:'อุปกรณ์เครือข่าย (Switch)', sheetKey:null, viewMode:'network' }
+  personnel: { sheetKey:'Personnel', label:'บุคลากร' },
+  computer:  { sheetKey:'Computer',  label:'คอมพิวเตอร์' },
+  laptop:    { sheetKey:'Laptop',    label:'Laptop' },
+  wifi:      { sheetKey:'WiFi',      label:'WiFi' },
+  network:   { sheetKey:'Network',   label:'Network' }
 };
+let userRole='viewer', selectedRole='viewer', allData={}, sheetMeta=[], filteredCache={}, editState=null, sbCollapsed=false;
+let leafletMap=null, switchMarkerGroup=null, swMarkerList=[], swPolyline=null;
+let swEditState=null, swPickingCoords=false, _swSavedFields={}, calcLine=null, distSegments=[];
 
-const VIEW_COLS = {
-  computer: [
-    {label:'ลำดับ',    match:['ลำดับ']},
-    {label:'ชื่อคอม',  match:['ชื่อคอม','ชื่อ คอม','hostname']},
-    {label:'หน่วยหลัก',match:['หน่วยหลัก']},
-    {label:'หน่วยรอง', match:['หน่วยรอง']},
-    {label:'สถานที่',  match:['สถานที่']},
-    {label:'ยี่ห้อ',   match:['ยี่ห้ออุปกรณ์','ยี่ห้อ']},
-    {label:'รุ่น',     match:['รุ่นอุปกรณ์','รุ่น']},
-    {label:'IP Address', match:['ip address','ip']},
-    {label:'MAC Address',match:['mac address','mac']}
-  ],
-  network: [
-    {label:'ลำดับ',              match:['ลำดับ']},
-    {label:'Track No.',          match:['track no','track']},
-    {label:'ชื่ออุปกรณ์ในระบบ', match:['ชื่ออุปกรณ์ในระบบ','ชื่อในระบบ']},
-    {label:'ชื่อ/รุ่น',          match:['ชื่อ/รุ่น','ชื่อ รุ่น','รุ่น']},
-    {label:'MAC Address',        match:['mac address','mac']},
-    {label:'IP Address',         match:['ip address','ip']},
-    {label:'Serial Number',      match:['serial number','serial','ซีเรียล']}
-  ]
-};
-
-let allData   = {};
-let sheetMeta = [];
-let editState = null;
-let filteredCache = {};
-let leafletMap = null;
-let sbCollapsed = false;
-
-// ── Switch locations (mutable) ──────────────
 let SWITCHES = [
-  {n:"กบ.กบ.2 W2_L2_B-K-B-N2",lat:14.8642905,lng:100.6409240,d:""},
-  {n:"ตอส. ขัต.กบ.2 Sorhors",lat:14.8695282,lng:100.6388526,d:"Rack 12u"},
-  {n:"ตอส. ขัต. กบ.2 W2_L2_or-yor-troop",lat:14.8711172,lng:100.6464342,d:""},
-  {n:"กบ.นลส.กบ.2 W2_L2_or-yor-battalion2",lat:14.8741689,lng:100.6473792,d:""},
-  {n:"ตอส.อก.กบ.2 W2_L2_hospital",lat:14.8748949,lng:100.6444289,d:""},
-  {n:"ผกค.กบ.2 W2_L2_Por_Kor_Sor",lat:14.8751134,lng:100.6490979,d:""},
-  {n:"ฝยบ.ยานยนต์ ผกค.กบ.2",lat:14.8755906,lng:100.6491295,d:"Rack 12u"},
-  {n:"หง.คง. ผกค.กบ.2 Hong_Kong",lat:14.8765410,lng:100.6492541,d:"Rack 12u"},
-  {n:"ตอส. สนับสนุนทหาร กบ.2",lat:14.8757233,lng:100.6504205,d:"Rack 12u"},
-  {n:"ตอส. นลส.กบ.2",lat:14.8737353,lng:100.6500014,d:""},
-  {n:"ผชย.กบ.2 W2_L2_por_chor_yor",lat:14.8746059,lng:100.6537501,d:"Rack 12u"},
-  {n:"ฝบท.กทน.บน.2",lat:14.8751543,lng:100.6536402,d:""},
-  {n:"ฝสนับสนุนและปฏิบัติการ",lat:14.8748811,lng:100.6529227,d:""},
-  {n:"อนุสรณ์สถาน",lat:14.8732625,lng:100.6529395,d:""},
-  {n:"ผซข.นลส.กบ.2 home-base1",lat:14.8733367,lng:100.6536830,d:""},
-  {n:"SQN201-HQ-L2",lat:14.8732618,lng:100.6550396,d:""},
-  {n:"นลส.201 Wing201",lat:14.8747833,lng:100.6573493,d:""},
-  {n:"นลส.201",lat:14.8744602,lng:100.6569875,d:""},
-  {n:"รปภ.ยุทธนาการ S-92",lat:14.8739342,lng:100.6563531,d:""},
-  {n:"กรลส.ศทน. Tower_KKT",lat:14.8753739,lng:100.6589640,d:""},
-  {n:"หง.คง. ฝ.เต.สะพาน",lat:14.8754048,lng:100.6595170,d:""},
-  {n:"SW L3 WING2-L3-C9200L",lat:14.8761338,lng:100.6579758,d:"Cisco C9200L"},
-  {n:"SW L2 WING2-L2-C3850-SFP",lat:14.8760680,lng:100.6579326,d:"Cisco C3850"},
-  {n:"กบ.กบ.2/2",lat:14.8641810,lng:100.6408415,d:""},
-  {n:"BorKor_202_Wing2",lat:14.8799115,lng:100.6568745,d:""},
-  {n:"รปภ.ยุทธกรรมเครือข่าย",lat:14.8805329,lng:100.6569391,d:""},
-  {n:"รปภ.ยุทธกรรม AC_202",lat:14.8806611,lng:100.6574107,d:""},
-  {n:"นลส.202",lat:14.8801219,lng:100.6577781,d:"Rack 12u"},
-  {n:"BorKor_203_wing2",lat:14.8812362,lng:100.6555370,d:""},
-  {n:"ฝ.บก.203 Lk203",lat:14.8816635,lng:100.6561538,d:""},
-  {n:"ฝบท.บก.คณะกรรมการ",lat:14.8851374,lng:100.6519617,d:""},
-  {n:"W2_L2_kor-chor-or2",lat:14.8709928,lng:100.6511615,d:""},
-  {n:"กบ.กบ. กบ.กบ.2",lat:14.8699097,lng:100.6518566,d:""},
-  {n:"ลก.ลบ.รป.เครือข่าย",lat:14.8708613,lng:100.6524561,d:""},
-  {n:"ฝลตนบดีกรรมการ กบ.กบ.2",lat:14.8712098,lng:100.6500013,d:""},
-  {n:"กรลส.server กบ.จ.4",lat:14.8611334,lng:100.6756749,d:""},
-  {n:"กบ.กบ. กบ.จ.4",lat:14.8616592,lng:100.6758315,d:""},
-  {n:"บริเวณจอดอากาศยาน",lat:14.8723174,lng:100.6830023,d:""},
-  {n:"AMMO กบ.2",lat:14.8597357,lng:100.6743178,d:""}
+  {n:"บก.บน.2 W2_L2_B-K-B-N2",lat:14.8642905782421,lng:100.6409240427434,d:""},
+  {n:"ร้อย ทสห.บน.2 Sorhor",lat:14.86952824861231,lng:100.6388526777776,d:""},
+  {n:"ร้อย ทย. ช่องยุทธการ1",lat:14.8711172228731,lng:100.6464342108525,d:""},
+  {n:"บก.พัน อย.บน.2",lat:14.87416891157938,lng:100.6473792314206,d:""},
+  {n:"รพ.กองบิน 2",lat:14.87489498371463,lng:100.6444289429804,d:""},
+  {n:"ผขส.บน.2",lat:14.8751134877488,lng:100.6490979956575,d:""},
+  {n:"ฝ่ายพาหนะ ผขส.บน.2",lat:14.87559069094783,lng:100.6491295623202,d:""},
+  {n:"มว.คด.ผขส.บน.2",lat:14.87654105983241,lng:100.6492541404917,d:""},
+  {n:"ร้อย สนับสนุน อย.บน.2",lat:14.87572335520606,lng:100.6504205763343,d:""},
+  {n:"ร้อย ปตอ.อย.บน.2",lat:14.8737353344215,lng:100.6500142828909,d:""},
+  {n:"ผชย.บน.2",lat:14.87460599250635,lng:100.6537501114426,d:""},
+  {n:"คลังรวมการ บน.2",lat:14.87515437510461,lng:100.6536402304648,d:""},
+  {n:"ปั้มน้ำมัน ผชย.บน.2",lat:14.87488115828319,lng:100.6529227841692,d:""},
+  {n:"ขนส่งทางอากาศ",lat:14.87326251580426,lng:100.6529395057885,d:""},
+  {n:"ผพธ.บน.2",lat:14.87333675060953,lng:100.653683089962,d:""},
+  {n:"บก.ฝูง201 SQN201-HQ-L2",lat:14.87326181551624,lng:100.6550396535681,d:""},
+  {n:"ฝสอ.ฝูง 201 Wing201",lat:14.87478332144951,lng:100.6573493433141,d:""},
+  {n:"ฝกช.ฝูง 201",lat:14.87446025132832,lng:100.6569875048295,d:""},
+  {n:"โรงเก็บ S-92",lat:14.87393424956512,lng:100.6563531619402,d:""},
+  {n:"หอบังคับการบิน Tower_KKT",lat:14.87537390067983,lng:100.658964047451,d:""},
+  {n:"มว.ดับเพลิง",lat:14.87540480454363,lng:100.6595170395721,d:""},
+  {n:"SW L3 ผสอ.กทน.บน.2",lat:14.8761338499048,lng:100.6579758270461,d:""},
+  {n:"SW L2 ผสอ.กทน.บน.2",lat:14.8760680003319,lng:100.6579326464897,d:""},
+  {n:"บก.บน.2/2",lat:14.86418101976541,lng:100.6408415512007,d:""},
+  {n:"บก.ฝูง.202 BorKor_202_Wing2",lat:14.87991159391733,lng:100.6568745282354,d:""},
+  {n:"อาคารพิชญ์",lat:14.88053299279341,lng:100.656939198467,d:""},
+  {n:"อาคารตัวซี AC_202",lat:14.8806611606422,lng:100.6574107999416,d:""},
+  {n:"ฝสอ.ฝูง202",lat:14.8801219472982,lng:100.6577781870963,d:""},
+  {n:"กทน.บน.2",lat:14.87247615926425,lng:100.6557767560216,d:""},
+  {n:"บก.ฝูง203 Borkor_203_wing2",lat:14.88123625354605,lng:100.6557370715987,d:""},
+  {n:"โรงเก็บ ฝูง.203 Lk203",lat:14.88166355009703,lng:100.6561538648351,d:""},
+  {n:"คลังเชื้อเพลิง",lat:14.88513746890346,lng:100.6519617399481,d:""},
+  {n:"อาคาร กซอ2",lat:14.87099286083965,lng:100.6511615707395,d:""},
+  {n:"บก.กซอ2",lat:14.86990971427746,lng:100.6518566533012,d:""},
+  {n:"โรงซ่อม ฮ.พระราชพาหนะ",lat:14.8708613944161,lng:100.6524561328085,d:""},
+  {n:"แผนกบินทดสอบ กซอ.2",lat:14.87120989104224,lng:100.6500137672699,d:""},
+  {n:"ห้องserver กรว.4",lat:14.86113347527049,lng:100.675674930344,d:""},
+  {n:"Untitled placemark",lat:14.86165370027012,lng:100.6758315884861,d:""},
+  {n:"บก.กรว.4",lat:14.86165922957866,lng:100.6758303278525,d:""},
+  {n:"ศูนย์ฝึกภาคพื้นทางยุทธวิธีทหารอากาศ",lat:14.87231744622264,lng:100.6830023141412,d:""},
+  {n:"AMMO บน.2",lat:14.85973576506553,lng:100.6743178922245,d:""}
 ];
 
-let switchMarkerGroup = null;
-let swEditState = null;
-let swPickingCoords = false;
-let _swSavedFields = {};
+// API
+function callApi(a){return fetch(SCRIPT_URL+'?action='+encodeURIComponent(a),{redirect:'follow'}).then(r=>r.json());}
+function postApi(d){return fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(d),redirect:'follow'}).then(r=>r.json());}
 
-// ════════════════════════════════════════════
-//  LOGIN
-// ════════════════════════════════════════════
-function selectRole(role) {
-  selectedRole = role;
-  document.getElementById('tab-viewer').classList.toggle('active', role === 'viewer');
-  document.getElementById('tab-admin').classList.toggle('active',  role === 'admin');
+// OVERLAY — animated loading card
+const _LOV=[
+  {i:'⚡',t:'เชื่อมต่อ Google Sheets'},
+  {i:'📋',t:'โหลดข้อมูลบุคลากร'},
+  {i:'💻',t:'โหลดข้อมูลอุปกรณ์'},
+  {i:'🌐',t:'โหลดข้อมูลเครือข่าย'},
+  {i:'🗺️',t:'โหลดข้อมูลแผนที่'},
+  {i:'✅',t:'ประมวลผลเสร็จสิ้น'},
+];
+let _lovStep=0,_lovTimer=null;
+function _lovRender(){
+  const el=document.getElementById('lovSteps');if(!el)return;
+  el.innerHTML=_LOV.map((s,i)=>`<div class="lov-step ${i<_lovStep?'done':i===_lovStep?'active':''}"><span class="lov-step-ico">${i<_lovStep?'✓':s.i}</span><span>${s.t}</span></div>`).join('');
+}
+function _lovProgress(pct){const b=document.getElementById('lovBar'),p=document.getElementById('lovPct');if(b)b.style.width=pct+'%';if(p)p.textContent=pct+'%';}
+function showOverlay(msg){
+  document.getElementById('lovMsg').textContent=msg||'กำลังโหลดข้อมูล…';
+  _lovStep=0;_lovProgress(5);_lovRender();
+  document.getElementById('loadOverlay').style.display='flex';
+  if(_lovTimer)clearInterval(_lovTimer);
+  _lovTimer=setInterval(()=>{
+    if(_lovStep<_LOV.length-2){_lovStep++;_lovProgress(Math.round((_lovStep/(_LOV.length-1))*88));_lovRender();}
+  },550);
+}
+function hideOverlay(){
+  if(_lovTimer){clearInterval(_lovTimer);_lovTimer=null;}
+  _lovStep=_LOV.length-1;_lovProgress(100);_lovRender();
+  setTimeout(()=>{document.getElementById('loadOverlay').style.display='none';_lovProgress(0);},480);
 }
 
-function doLogin() {
-  const pw = document.getElementById('pwInput').value;
-  if (pw === PASSWORDS[selectedRole]) {
-    userRole = selectedRole;
-    // ใส่ class บน body เพื่อควบคุม visibility
+// AUTH
+function selectRole(role){selectedRole=role;document.getElementById('tab-viewer').classList.toggle('active',role==='viewer');document.getElementById('tab-admin').classList.toggle('active',role==='admin');}
+function doLogin(){
+  const pw=document.getElementById('pwInput').value;
+  if(pw===PASSWORDS[selectedRole]){
+    userRole=selectedRole;
     document.body.classList.remove('role-viewer','role-admin');
-    document.body.classList.add('role-' + userRole);
-    // แสดง role badge ใน topbar
-    const badge = document.getElementById('roleBadge');
-    badge.textContent = userRole === 'admin' ? '⚙ Admin' : '👁 Viewer';
-    badge.className = 'role-badge ' + userRole;
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('loader').style.display = 'flex';
-    document.getElementById('appShell').style.display = 'block';
+    document.body.classList.add('role-'+userRole);
+    const b=document.getElementById('roleBadge');
+    b.textContent=userRole==='admin'?'⚙ Admin':'👁 Viewer';
+    b.className='role-badge '+userRole;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appShell').style.display='block';
+    showOverlay('กำลังโหลดข้อมูล…');
     loadData();
   } else {
     document.getElementById('loginErr').classList.remove('d-none');
     document.getElementById('pwInput').focus();
   }
 }
-
-function doLogout() {
-  if (!confirm('ต้องการออกจากระบบ?')) return;
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('appShell').style.display = 'none';
-  document.getElementById('statsBar').style.display = 'none';
-  document.getElementById('pwInput').value = '';
+function doLogout(){
+  if(!confirm('ต้องการออกจากระบบ?'))return;
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('appShell').style.display='none';
+  document.getElementById('statsBar').style.display='none';
+  document.getElementById('pwInput').value='';
   document.getElementById('loginErr').classList.add('d-none');
   document.body.classList.remove('role-viewer','role-admin');
-  userRole = 'viewer'; selectedRole = 'viewer';
-  selectRole('viewer');
+  userRole='viewer';selectedRole='viewer';selectRole('viewer');
 }
 
-function togglePw() {
-  const inp = document.getElementById('pwInput');
-  const ico = document.getElementById('eyeIcon');
-  if (inp.type === 'password') { inp.type='text'; ico.className='bi bi-eye-slash'; }
-  else { inp.type='password'; ico.className='bi bi-eye'; }
-}
-
-// ════════════════════════════════════════════
-//  SIDEBAR TOGGLE
-// ════════════════════════════════════════════
-function toggleSB() {
-  sbCollapsed = !sbCollapsed;
-  document.getElementById('sidebar').classList.toggle('collapsed', sbCollapsed);
-  document.getElementById('appMain').classList.toggle('wide', sbCollapsed);
-  document.getElementById('statsBar').classList.toggle('wide', sbCollapsed);
-}
-
-// ════════════════════════════════════════════
-//  NAVIGATION
-// ════════════════════════════════════════════
-function nav(el) {
-  document.querySelectorAll('.nav-lnk').forEach(l => l.classList.remove('active'));
-  el.classList.add('active');
-  const page = el.dataset.page;
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + page)?.classList.add('active');
-  if (page === 'mappage' && leafletMap) setTimeout(() => leafletMap.invalidateSize(), 150);
-}
-
-// ════════════════════════════════════════════
-//  DATA LOADING
-// ════════════════════════════════════════════
-function loadData() {
-  callApi('readAll')
-    .then(onLoaded)
-    .catch(e => {
-      document.getElementById('loader').style.display = 'none';
-      toast('โหลดข้อมูลล้มเหลว: ' + e.message, 'danger');
-    });
-}
-
-function onLoaded(result) {
-  sheetMeta = result.meta || [];
-  allData   = result.data || {};
-  if (result.switches && result.switches.length > 0) SWITCHES = result.switches;
+// DATA
+function loadData(){callApi('readAll').then(onLoaded).catch(e=>{hideOverlay();toast('โหลดข้อมูลล้มเหลว: '+e.message,'danger');});}
+function onLoaded(result){
+  sheetMeta=result.meta||[];allData=result.data||{};
+  if(result.switches&&result.switches.length>0)SWITCHES=result.switches;
   mapSheets();
-  Object.keys(PAGE_CFG).forEach(k => renderTable(k));
-  renderStatBar();
-  initMap();
-  document.getElementById('loader').style.display = 'none';
-  document.getElementById('syncTime').textContent = 'อัปเดต ' + new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
-  toast('โหลดข้อมูลสำเร็จ', 'success');
+  Object.keys(PAGE_CFG).forEach(k=>renderTable(k));
+  renderStatBar();initMap();hideOverlay();
+  document.getElementById('syncTime').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  toast('โหลดข้อมูลสำเร็จ','success');
 }
-
-function mapSheets() {
-  const names = sheetMeta.map(m => m.name);
-  names.forEach(name => {
-    const lo = name.toLowerCase();
-    if ((lo.includes('บุคลากร') || lo.includes('รายชื่อ')) && !PAGE_CFG.personnel.sheetKey)
-      PAGE_CFG.personnel.sheetKey = name;
-    else if (lo.includes('พกพา') && !PAGE_CFG.laptop.sheetKey)
-      PAGE_CFG.laptop.sheetKey = name;
-    else if ((lo.includes('คอมพิวเตอร์') || lo.includes('computer')) && !PAGE_CFG.computer.sheetKey)
-      PAGE_CFG.computer.sheetKey = name;
-    else if ((lo.includes('wifi') || lo.includes('wi-fi') || lo.includes('ไร้สาย') || lo.includes('ap')) && !PAGE_CFG.wifi.sheetKey)
-      PAGE_CFG.wifi.sheetKey = name;
-    else if ((lo.includes('switch') || lo.includes('network') || lo.includes('เครือข่าย')) && !PAGE_CFG.network.sheetKey)
-      PAGE_CFG.network.sheetKey = name;
-  });
-  const unmappedPages = Object.keys(PAGE_CFG).filter(k => !PAGE_CFG[k].sheetKey);
-  const usedNames = Object.values(PAGE_CFG).map(c => c.sheetKey).filter(Boolean);
-  const freeNames = names.filter(n => !usedNames.includes(n));
-  unmappedPages.forEach((k, i) => { if (freeNames[i]) PAGE_CFG[k].sheetKey = freeNames[i]; });
-}
-
-function syncAll() {
+function syncAll(){
   document.getElementById('syncIcon').classList.add('spin');
+  showOverlay('กำลังซิงค์ข้อมูล…');
   callApi('readAll')
-    .then(r => {
-      allData = r.data || {}; sheetMeta = r.meta || [];
-      if (r.switches && r.switches.length > 0) {
-        SWITCHES = r.switches;
-        renderMapMarkers(); renderSwitchTable();
-      }
-      Object.keys(PAGE_CFG).forEach(k => renderTable(k));
+    .then(r=>{
+      allData=r.data||{};sheetMeta=r.meta||{};
+      if(r.switches&&r.switches.length>0){SWITCHES=r.switches;refreshMapData();}
+      Object.keys(PAGE_CFG).forEach(k=>renderTable(k));
       renderStatBar();
       document.getElementById('syncIcon').classList.remove('spin');
-      document.getElementById('syncTime').textContent = 'อัปเดต ' + new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
-      toast('ซิงค์สำเร็จ', 'success');
+      document.getElementById('syncTime').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+      hideOverlay();toast('ซิงค์สำเร็จ','success');
     })
-    .catch(e => {
-      document.getElementById('syncIcon').classList.remove('spin');
-      toast('ซิงค์ล้มเหลว: ' + e.message, 'danger');
-    });
+    .catch(e=>{document.getElementById('syncIcon').classList.remove('spin');hideOverlay();toast('ซิงค์ล้มเหลว: '+e.message,'danger');});
 }
 
-// ════════════════════════════════════════════
-//  TABLE RENDERING  (ไม่มี pagination)
-// ════════════════════════════════════════════
-function getSheetData(pageKey) {
-  const k = PAGE_CFG[pageKey]?.sheetKey;
-  return k && allData[k] ? allData[k] : {headers:[], rows:[]};
+// SHEET MAPPING
+function mapSheets(){
+  const keys=Object.keys(allData);
+  function tryMap(pk,...kws){
+    if(allData[PAGE_CFG[pk].sheetKey])return;
+    const f=keys.find(k=>kws.some(w=>k.toLowerCase().includes(w.toLowerCase())));
+    if(f)PAGE_CFG[pk].sheetKey=f;
+  }
+  tryMap('personnel','personnel','บุคลากร','กำลัง');
+  tryMap('computer','computer','คอมพิวเตอร์','desktop');
+  tryMap('laptop','laptop','โน๊ตบุ๊ค','notebook');
+  tryMap('wifi','wifi','ap','access');
+  tryMap('network','network','switch','อุปกรณ์');
 }
 
-function findCol(headers, matches) {
-  for (const m of matches) {
-    const idx = headers.findIndex(h => h && h.toLowerCase().includes(m.toLowerCase()));
-    if (idx >= 0) return idx;
-  }
-  return -1;
+// NAV
+function nav(el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  const pg=el.dataset.page;
+  document.querySelectorAll('.page-section').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+pg).classList.add('active');
+  if(pg==='mappage')setTimeout(()=>{if(leafletMap)leafletMap.invalidateSize();},150);
+}
+function toggleSB(){
+  sbCollapsed=!sbCollapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed',sbCollapsed);
+  document.getElementById('appMain').classList.toggle('wide',sbCollapsed);
+  document.getElementById('statsBar').classList.toggle('wide',sbCollapsed);
 }
 
-function renderTable(pageKey) {
-  const {headers, rows} = getSheetData(pageKey);
-  const cfg  = PAGE_CFG[pageKey];
-  const mode = cfg.viewMode;
-  const tbl  = document.getElementById('tbl-' + pageKey);
-  if (!tbl) return;
-
-  // คอลัมน์ที่จะแสดง
-  let viewDefs = null;
-  if (mode !== 'full' && VIEW_COLS[mode]) {
-    viewDefs = VIEW_COLS[mode].map(def => ({
-      label: def.label,
-      col:   findCol(headers, def.match)
-    }));
-  }
-
-  // thead
-  const thCells = viewDefs
-    ? viewDefs.map(d => `<th>${d.label}</th>`).join('') + '<th class="admin-only">จัดการ</th>'
-    : headers.map(h => `<th>${h}</th>`).join('') + '<th class="admin-only">จัดการ</th>';
-  tbl.querySelector('thead').innerHTML = `<tr>${thCells}</tr>`;
-
-  // unit filter
-  const fltEl = document.getElementById('flt-' + pageKey);
-  if (fltEl) {
-    const unitCol = findCol(headers, ['หน่วยหลัก','หน่วย']);
-    if (unitCol >= 0) {
-      const units = [...new Set(rows.map(r => r[unitCol]).filter(Boolean))].sort();
-      const cur = fltEl.value;
-      fltEl.innerHTML = '<option value="">- ทุกหน่วยหลัก -</option>' +
-        units.map(u => `<option${u===cur?' selected':''} value="${u}">${u}</option>`).join('');
-      fltEl.dataset.col = unitCol;
-    }
-  }
-
-  // กรองข้อมูล
-  const srch    = (document.getElementById('srch-' + pageKey)?.value || '').toLowerCase();
-  const unitFlt = fltEl?.value || '';
-  const unitCol2 = parseInt(fltEl?.dataset.col ?? -1);
-  const filtered = rows.map((r, i) => ({r, i})).filter(({r}) => {
-    if (unitFlt && unitCol2 >= 0 && r[unitCol2] !== unitFlt) return false;
-    if (srch && !r.join(' ').toLowerCase().includes(srch)) return false;
-    return true;
-  });
-  filteredCache[pageKey] = filtered;
-  const total = filtered.length;
-
-  // แสดงทุกแถว (ไม่แบ่งหน้า)
-  tbl.querySelector('tbody').innerHTML = filtered.map(({r, i}) => {
-    const cell = (v) => {
-      const txt = (v||'');
-      const t = txt.replace(/"/g,'&quot;');
-      return `<td title="${t}">${txt}</td>`;
-    };
-    const cells = viewDefs
-      ? viewDefs.map(d => cell(d.col >= 0 ? (r[d.col]||'') : '')).join('')
-      : r.map(c => cell(c)).join('');
-    return `<tr>${cells}<td class="admin-only" style="white-space:nowrap">
-      <button class="btn-edit me-1" onclick="editRow('${pageKey}',${i})"><i class="bi bi-pencil-fill"></i> แก้ไข</button>
-      <button class="btn-del" onclick="delRow('${pageKey}',${i})"><i class="bi bi-trash-fill"></i> ลบ</button>
-    </td></tr>`;
+// TABLE
+function getSheetData(pk){return allData[PAGE_CFG[pk]?.sheetKey]||{headers:[],rows:[]};}
+function renderTable(pk,search){
+  const {headers,rows}=getSheetData(pk);
+  const thead=document.getElementById('thead-'+pk),tbody=document.getElementById('tbody-'+pk),cnt=document.getElementById('cnt-'+pk);
+  if(!thead||!tbody)return;
+  const q=(search||'').toLowerCase();
+  const filtered=q?rows.filter(r=>r.some(c=>String(c).toLowerCase().includes(q))):rows;
+  filteredCache[pk]=filtered.map(r=>({r,i:rows.indexOf(r)}));
+  thead.innerHTML=headers.map(h=>`<th>${h}</th>`).join('')+'<th class="admin-only">จัดการ</th>';
+  tbody.innerHTML=filtered.map(row=>{
+    const ri=rows.indexOf(row);
+    return `<tr>${row.map(c=>`<td title="${String(c||'').replace(/"/g,'&quot;')}">${c||'—'}</td>`).join('')}
+      <td class="admin-only" style="white-space:nowrap">
+        <button class="btn-edit me-1" onclick="editRow('${pk}',${ri})"><i class="bi bi-pencil-fill"></i></button>
+        <button class="btn-del" onclick="delRow('${pk}',${ri})"><i class="bi bi-trash-fill"></i></button>
+      </td></tr>`;
   }).join('');
-
-  // แสดงจำนวน (แทน pagination)
-  const pgrEl = document.getElementById('pgr-' + pageKey);
-  if (pgrEl) pgrEl.innerHTML =
-    `<span style="color:#64748b;font-size:12px">แสดงทั้งหมด <b>${total}</b> รายการ</span>`;
+  if(cnt)cnt.textContent=`${filtered.length} รายการ${q?' (กรอง)':''}`;
 }
 
-function applyFilter(k) { renderTable(k); }
-
-// ════════════════════════════════════════════
-//  CRUD (data tables)
-// ════════════════════════════════════════════
-function addRow(pageKey) {
-  const {headers} = getSheetData(pageKey);
-  editState = {pageKey, rowIdx:-1, isNew:true};
-  document.getElementById('mTitle').textContent = 'เพิ่มข้อมูลใหม่';
-  document.getElementById('mBody').innerHTML = buildForm(headers, []);
-  new bootstrap.Modal(document.getElementById('editModal')).show();
+// STATS BAR
+function renderStatBar(){
+  const defs=[
+    {key:'personnel',label:'บุคลากร',icon:'bi-people',c:'#1d4ed8'},
+    {key:'computer',label:'คอมพิวเตอร์',icon:'bi-pc-display',c:'#15803d'},
+    {key:'laptop',label:'คอม (พกพา)',icon:'bi-laptop',c:'#c2410c'},
+    {key:'wifi',label:'WiFi/AP',icon:'bi-wifi',c:'#7e22ce'},
+    {key:'network',label:'Switch/อื่นๆ',icon:'bi-hdd-network',c:'#be123c'},
+    {key:'_map',label:'Switch (แผนที่)',icon:'bi-geo-alt',c:'#0f766e'}
+  ];
+  const bar=document.getElementById('statsBar');if(!bar)return;
+  bar.innerHTML=defs.map(d=>{
+    const cnt=d.key==='_map'?SWITCHES.length:(getSheetData(d.key).rows.length||0);
+    return `<div class="sb-stat"><i class="bi ${d.icon}" style="color:${d.c};font-size:14px"></i><span class="sb-stat-num" style="color:${d.c}">${cnt}</span><span class="sb-stat-lbl">${d.label}</span></div>`;
+  }).join('');
+  bar.style.display='flex';
 }
 
-function editRow(pageKey, rowIdx) {
-  const {headers, rows} = getSheetData(pageKey);
-  editState = {pageKey, rowIdx, isNew:false};
-  document.getElementById('mTitle').textContent = 'แก้ไขข้อมูล';
-  document.getElementById('mBody').innerHTML = buildForm(headers, rows[rowIdx]||[]);
-  new bootstrap.Modal(document.getElementById('editModal')).show();
-}
-
-function buildForm(headers, row) {
-  return `<div class="row g-2">${headers.map((h,i)=>`
-    <div class="col-md-6 col-lg-4">
-      <div class="modal-label">${h||'คอลัมน์ '+(i+1)}</div>
-      <input class="form-control form-control-sm" id="f${i}" value="${(row[i]||'').replace(/"/g,'&quot;').replace(/</g,'&lt;')}">
-    </div>`).join('')}</div>`;
-}
-
-function saveRecord() {
-  if (!editState) return;
-  const {pageKey, rowIdx, isNew} = editState;
-  const {headers} = getSheetData(pageKey);
-  const sheetName = PAGE_CFG[pageKey].sheetKey;
-  const rowData = headers.map((_,i) => document.getElementById('f'+i)?.value || '');
-  bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
-  if (isNew) { allData[sheetName].rows.push(rowData); }
-  else { allData[sheetName].rows[rowIdx] = rowData; }
-  renderTable(pageKey); renderStatBar();
-  const payload = isNew
-    ? {action:'appendRow', sheet:sheetName, rowData}
-    : {action:'updateRow', sheet:sheetName, rowIndex:rowIdx, rowData};
-  postApi(payload)
-    .then(r => toast(r.ok?'บันทึกสำเร็จ':'ข้อผิดพลาด: '+r.error, r.ok?'success':'danger'))
-    .catch(e => toast('ข้อผิดพลาด: '+e.message,'danger'));
-}
-
-function delRow(pageKey, rowIdx) {
-  if (!confirm('ต้องการลบรายการนี้ใช่หรือไม่?')) return;
-  const sheetName = PAGE_CFG[pageKey].sheetKey;
-  allData[sheetName].rows.splice(rowIdx, 1);
-  renderTable(pageKey); renderStatBar();
-  postApi({action:'deleteRow', sheet:sheetName, rowIndex:rowIdx})
-    .then(r => toast(r.ok?'ลบสำเร็จ':'ข้อผิดพลาด: '+r.error, r.ok?'success':'danger'))
-    .catch(e => toast('ข้อผิดพลาด: '+e.message,'danger'));
-}
-
-// ════════════════════════════════════════════
-//  EXPORT
-// ════════════════════════════════════════════
-function exportCSV(pk) {
-  const {headers, rows} = getSheetData(pk);
-  const filtered = filteredCache[pk]?.map(x=>x.r) || rows;
-  const csv = '﻿' + [headers,...filtered].map(r=>r.map(c=>`"${(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download=pk+'.csv'; a.click();
+// EXPORT
+function exportCSV(pk){
+  const {headers,rows}=getSheetData(pk);const filtered=filteredCache[pk]?.map(x=>x.r)||rows;
+  const csv='﻿'+[headers,...filtered].map(r=>r.map(c=>`"${(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=pk+'.csv';a.click();
   toast('Export CSV สำเร็จ','success');
 }
-function exportXLSX(pk) {
-  const {headers, rows} = getSheetData(pk);
-  const filtered = filteredCache[pk]?.map(x=>x.r) || rows;
-  const ws = XLSX.utils.aoa_to_sheet([headers,...filtered]);
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, pk);
-  XLSX.writeFile(wb, pk+'.xlsx'); toast('Export Excel สำเร็จ','success');
+function exportXLSX(pk){
+  const {headers,rows}=getSheetData(pk);const filtered=filteredCache[pk]?.map(x=>x.r)||rows;
+  const ws=XLSX.utils.aoa_to_sheet([headers,...filtered]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,pk);
+  XLSX.writeFile(wb,pk+'.xlsx');toast('Export Excel สำเร็จ','success');
 }
 
-// ════════════════════════════════════════════
-//  STATS BAR
-// ════════════════════════════════════════════
-function renderStatBar() {
-  const defs = [
-    {key:'personnel',label:'บุคลากร',       icon:'bi-people',      c:'#1d4ed8'},
-    {key:'computer', label:'คอมพิวเตอร์',    icon:'bi-pc-display',  c:'#15803d'},
-    {key:'laptop',   label:'คอม (พกพา)',     icon:'bi-laptop',      c:'#c2410c'},
-    {key:'wifi',     label:'WiFi/AP',        icon:'bi-wifi',        c:'#7e22ce'},
-    {key:'network',  label:'Switch/อื่นๆ',   icon:'bi-hdd-network', c:'#be123c'},
-    {key:'_map',     label:'Switch (แผนที่)', icon:'bi-geo-alt',     c:'#0f766e'}
-  ];
-  const bar = document.getElementById('statsBar');
-  if (!bar) return;
-  bar.innerHTML = defs.map(d => {
-    const cnt = d.key === '_map' ? SWITCHES.length : (getSheetData(d.key).rows.length || 0);
-    return `<div class="sb-stat">
-      <i class="bi ${d.icon}" style="color:${d.c};font-size:14px"></i>
-      <span class="sb-stat-num" style="color:${d.c}">${cnt}</span>
-      <span class="sb-stat-lbl">${d.label}</span>
-    </div>`;
-  }).join('');
-  bar.style.display = 'flex';
+// CRUD
+function addRow(pk){const{headers}=getSheetData(pk);editState={pk,rowIdx:-1,isNew:true};document.getElementById('mTitle').textContent='เพิ่มข้อมูลใหม่';document.getElementById('mBody').innerHTML=buildForm(headers,[]);new bootstrap.Modal(document.getElementById('editModal')).show();}
+function editRow(pk,ri){const{headers,rows}=getSheetData(pk);editState={pk,rowIdx:ri,isNew:false};document.getElementById('mTitle').textContent='แก้ไขข้อมูล';document.getElementById('mBody').innerHTML=buildForm(headers,rows[ri]||[]);new bootstrap.Modal(document.getElementById('editModal')).show();}
+function buildForm(headers,row){return `<div class="row g-2">${headers.map((h,i)=>`<div class="col-md-6 col-lg-4"><div class="modal-label">${h||'คอลัมน์ '+(i+1)}</div><input class="form-control form-control-sm" id="f${i}" value="${(row[i]||'').replace(/"/g,'&quot;').replace(/</g,'&lt;')}"></div>`).join('')}</div>`;}
+function saveRecord(){
+  if(!editState)return;
+  const{pk,rowIdx,isNew}=editState;
+  const pageKey=pk||editState.pageKey;
+  const{headers}=getSheetData(pageKey);const sheetName=PAGE_CFG[pageKey].sheetKey;
+  const rowData=headers.map((_,i)=>document.getElementById('f'+i)?.value||'');
+  bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+  if(isNew)allData[sheetName].rows.push(rowData);else allData[sheetName].rows[rowIdx]=rowData;
+  renderTable(pageKey);renderStatBar();
+  const payload=isNew?{action:'appendRow',sheet:sheetName,rowData}:{action:'updateRow',sheet:sheetName,rowIndex:rowIdx,rowData};
+  postApi(payload).then(r=>toast(r.ok?'บันทึกสำเร็จ':'ข้อผิดพลาด: '+r.error,r.ok?'success':'danger')).catch(e=>toast('ข้อผิดพลาด: '+e.message,'danger'));
+}
+function delRow(pk,ri){
+  if(!confirm('ต้องการลบรายการนี้ใช่หรือไม่?'))return;
+  const pageKey=pk;const sheetName=PAGE_CFG[pageKey].sheetKey;
+  allData[sheetName].rows.splice(ri,1);renderTable(pageKey);renderStatBar();
+  postApi({action:'deleteRow',sheet:sheetName,rowIndex:ri}).then(r=>toast(r.ok?'ลบสำเร็จ':'ข้อผิดพลาด: '+r.error,r.ok?'success':'danger')).catch(e=>toast('ข้อผิดพลาด: '+e.message,'danger'));
 }
 
-// ════════════════════════════════════════════
-//  MAP + SWITCH CRUD
-// ════════════════════════════════════════════
-function initMap() {
-  if (leafletMap) return;
-  leafletMap = L.map('map').setView([14.872, 100.648], 15);
-
-  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
-    attribution:'Imagery © Esri, Maxar, Earthstar Geographics', maxZoom:19});
-  const labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{
-    attribution:'', maxZoom:19, opacity:0.85});
-  const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'© OpenStreetMap', maxZoom:19});
-
-  sat.addTo(leafletMap);
-  labels.addTo(leafletMap);
-  L.control.layers({'ดาวเทียม':sat,'แผนที่':street},{}).addTo(leafletMap);
-
-  switchMarkerGroup = L.layerGroup().addTo(leafletMap);
-
-  // คลิกแผนที่เพื่อเลือกพิกัด
-  leafletMap.on('click', function(e) {
-    if (!swPickingCoords) return;
-    swPickingCoords = false;
-    document.getElementById('swPickBanner').style.display = 'none';
-    document.getElementById('swName').value = _swSavedFields.name || '';
-    document.getElementById('swDesc').value = _swSavedFields.desc || '';
-    document.getElementById('swLat').value  = e.latlng.lat.toFixed(6);
-    document.getElementById('swLng').value  = e.latlng.lng.toFixed(6);
-    new bootstrap.Modal(document.getElementById('swModal')).show();
-    toast('เลือกพิกัดแล้ว: ' + e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5), 'info');
+// MAP INIT
+const MC=['#1a3a6e','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2'];
+function mc(i){return MC[i%MC.length];}
+function makePin(num,color){
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38"><path d="M15 0C6.7 0 0 6.7 0 15c0 11.2 15 23 15 23S30 26.2 30 15C30 6.7 23.3 0 15 0z" fill="${color}"/><circle cx="15" cy="15" r="8" fill="white"/><text x="15" y="19.5" text-anchor="middle" font-size="8" font-weight="bold" fill="${color}" font-family="Arial,sans-serif">${num}</text></svg>`;
+  return L.divIcon({html:svg,className:'',iconSize:[30,38],iconAnchor:[15,38],popupAnchor:[0,-40]});
+}
+function initMap(){
+  if(leafletMap){refreshMapData();return;}
+  leafletMap=L.map('map').setView([14.872,100.651],14);
+  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Imagery © Esri',maxZoom:19});
+  const lbl=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{attribution:'',maxZoom:19,opacity:.85});
+  const str=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19});
+  sat.addTo(leafletMap);lbl.addTo(leafletMap);
+  L.control.layers({'ดาวเทียม':sat,'แผนที่':str},{}).addTo(leafletMap);
+  switchMarkerGroup=L.layerGroup().addTo(leafletMap);
+  leafletMap.on('click',e=>{
+    if(!swPickingCoords)return;
+    swPickingCoords=false;document.getElementById('swPickBanner').style.display='none';
+    document.getElementById('swName').value=_swSavedFields.name||'';document.getElementById('swDesc').value=_swSavedFields.desc||'';
+    document.getElementById('swLat').value=e.latlng.lat.toFixed(6);document.getElementById('swLng').value=e.latlng.lng.toFixed(6);
+    new bootstrap.Modal(document.getElementById('swModal')).show();toast('เลือกพิกัดแล้ว','info');
   });
-
-  renderMapMarkers();
-  renderSwitchTable();
+  const leg=L.control({position:'bottomleft'});
+  leg.onAdd=function(){const d=L.DomUtil.create('div','map-legend');d.innerHTML=`<div class="map-legend-title">📡 Switch กองบิน 2</div><div class="map-legend-item"><div class="leg-dot" style="background:#1a3a6e"></div>ตำแหน่ง Switch</div><div class="map-legend-item"><div style="width:12px;border-top:2px dashed #1a3a6e;margin-right:2px"></div>ลำดับเชื่อมต่อ</div>`;return d;};
+  leg.addTo(leafletMap);
+  refreshMapData();
 }
+function refreshMapData(){renderMapMarkers();buildDistanceTable();buildPointsList();buildCalcSelects();renderSwitchTable();}
 
-// render markers จาก SWITCHES array
-function renderMapMarkers() {
-  if (!switchMarkerGroup) return;
-  switchMarkerGroup.clearLayers();
-  const ico = L.divIcon({
-    html:`<div style="width:16px;height:16px;background:#22c55e;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.45);"></div>`,
-    className:'', iconAnchor:[8,8]
+// MARKERS
+function renderMapMarkers(){
+  if(!switchMarkerGroup)return;
+  switchMarkerGroup.clearLayers();swMarkerList=[];
+  if(swPolyline){leafletMap.removeLayer(swPolyline);swPolyline=null;}
+  SWITCHES.forEach((sw,i)=>{
+    const color=mc(i);
+    const mk=L.marker([sw.lat,sw.lng],{icon:makePin(i+1,color)}).addTo(switchMarkerGroup)
+      .bindPopup(`<div style="font-size:12px;min-width:160px"><b style="color:#1a3a6e">${i+1}. ${sw.n}</b>${sw.d?`<br><span style="color:#64748b;font-size:11px">${sw.d}</span>`:''}
+        <br><span style="font-size:10px;color:#94a3b8">${sw.lat.toFixed(5)}, ${sw.lng.toFixed(5)}</span>
+        <br><div style="margin-top:6px;display:flex;gap:4px"><button class="btn-edit" onclick="openEditSwitch(${i})"><i class="bi bi-pencil-fill"></i> แก้ไข</button><button class="btn-del" onclick="delSwitch(${i})"><i class="bi bi-trash-fill"></i> ลบ</button></div></div>`);
+    mk.on('click',()=>highlightDistRow(i));
+    swMarkerList.push(mk);
   });
-  SWITCHES.forEach((sw,i) => {
-    const popup = `<div style="font-size:13px;min-width:170px">
-      <b style="color:#1a3a6e">${sw.n}</b>
-      ${sw.d?`<br><span style="color:#64748b;font-size:11px">${sw.d}</span>`:''}
-      <br><span style="font-size:10px;color:#94a3b8">${sw.lat.toFixed(5)}, ${sw.lng.toFixed(5)}</span>
-      <br><div style="margin-top:7px;display:flex;gap:5px">
-        <button class="btn-edit" onclick="openEditSwitch(${i})"><i class="bi bi-pencil-fill"></i> แก้ไข</button>
-        <button class="btn-del" onclick="delSwitch(${i})"><i class="bi bi-trash-fill"></i> ลบ</button>
-      </div></div>`;
-    L.marker([sw.lat,sw.lng],{icon:ico}).addTo(switchMarkerGroup).bindPopup(popup);
-  });
+  if(SWITCHES.length>1)swPolyline=L.polyline(SWITCHES.map(s=>[s.lat,s.lng]),{color:'#1a3a6e',weight:2,opacity:.5,dashArray:'6,4'}).addTo(leafletMap);
+}
+function highlightDistRow(idx){
+  document.querySelectorAll('#distTbody tr').forEach(tr=>tr.classList.remove('dist-hl'));
+  const row=document.querySelector(`#distTbody tr[data-idx="${idx}"]`);
+  if(row){row.classList.add('dist-hl');row.scrollIntoView({block:'nearest'});}
+  mapTab('distances');
 }
 
-// render ตารางรายชื่อ Switch
-function renderSwitchTable() {
-  const tbody   = document.getElementById('swTbody');
-  const countEl = document.getElementById('swCount');
-  if (!tbody) return;
-  if (countEl) countEl.textContent = SWITCHES.length;
-  tbody.innerHTML = SWITCHES.map((sw,i) => `
-    <tr>
-      <td class="text-muted">${i+1}</td>
-      <td><a href="#" onclick="flyToSW(${sw.lat},${sw.lng});return false" style="color:#1a3a6e;text-decoration:none">${sw.n}</a></td>
-      <td>${sw.d||'—'}</td>
-      <td style="font-size:11px;color:#94a3b8">${sw.lat.toFixed(5)}, ${sw.lng.toFixed(5)}</td>
-      <td class="admin-only" style="white-space:nowrap">
-        <button class="btn-edit me-1" onclick="openEditSwitch(${i})"><i class="bi bi-pencil-fill"></i></button>
-        <button class="btn-del" onclick="delSwitch(${i})"><i class="bi bi-trash-fill"></i></button>
-      </td>
-    </tr>`).join('');
-}
-
-// เปิด modal เพิ่ม Switch
-function openAddSwitch() {
-  swEditState = {idx: -1};
-  document.getElementById('swModalTitle').textContent = 'เพิ่ม Switch ใหม่';
-  document.getElementById('swName').value = '';
-  document.getElementById('swDesc').value = '';
-  document.getElementById('swLat').value  = '';
-  document.getElementById('swLng').value  = '';
-  // navigate to map page first
-  const mapLink = document.querySelector('[data-page="mappage"]');
-  if (mapLink && !document.getElementById('page-mappage').classList.contains('active')) {
-    nav(mapLink);
-    setTimeout(() => { if(leafletMap) leafletMap.invalidateSize(); }, 150);
+// DISTANCE TABLE + OSRM
+function haversine(a,b,c,d){const R=6371000,r=x=>x*Math.PI/180,dL=r(c-a),dG=r(d-b),x=Math.sin(dL/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dG/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+function fmtM(m){return Math.round(m).toLocaleString()+' ม.';}
+function fmtKm(m){return(m/1000).toFixed(2);}
+function fmtDist(m){return m>=1000?(m/1000).toFixed(2)+' กม.':Math.round(m).toLocaleString()+' ม.';}
+function buildDistanceTable(){
+  const tbody=document.getElementById('distTbody');if(!tbody)return;
+  tbody.innerHTML='';distSegments=[];let tot=0;
+  for(let i=0;i<SWITCHES.length-1;i++){
+    const a=SWITCHES[i],b=SWITCHES[i+1],s=haversine(a.lat,a.lng,b.lat,b.lng);
+    tot+=s;distSegments.push({a,b,straight:s,roadDist:null,roadTime:null});
+    const tr=document.createElement('tr');tr.dataset.idx=i;
+    tr.innerHTML=`<td><span class="seg-num">${i+1}</span></td>
+      <td style="font-size:11px"><div class="from-name">${i+1}. ${a.n}</div><div style="color:#94a3b8;font-size:9px;line-height:1.2">↓</div><div class="to-name">${i+2}. ${b.n}</div></td>
+      <td class="d-straight">${fmtM(s)}</td><td class="d-road loading" id="rdist-${i}">กำลังโหลด…</td>`;
+    tr.addEventListener('click',()=>{leafletMap.setView([(a.lat+b.lat)/2,(a.lng+b.lng)/2],16);if(swMarkerList[i])swMarkerList[i].openPopup();});
+    tbody.appendChild(tr);
   }
-  new bootstrap.Modal(document.getElementById('swModal')).show();
+  document.getElementById('ms-count').textContent=SWITCHES.length;
+  document.getElementById('ms-straight').textContent=fmtKm(tot);
+  document.getElementById('ms-road').textContent='…';
+  loadOSRM();
 }
-
-// เปิด modal แก้ไข Switch
-function openEditSwitch(idx) {
-  const sw = SWITCHES[idx];
-  if (!sw) return;
-  swEditState = {idx};
-  document.getElementById('swModalTitle').textContent = 'แก้ไข Switch';
-  document.getElementById('swName').value = sw.n;
-  document.getElementById('swDesc').value = sw.d || '';
-  document.getElementById('swLat').value  = sw.lat;
-  document.getElementById('swLng').value  = sw.lng;
-  if (leafletMap) leafletMap.closePopup();
-  new bootstrap.Modal(document.getElementById('swModal')).show();
-}
-
-// ปุ่ม "เลือกพิกัดจากแผนที่" ใน modal
-function pickCoordsFromMap() {
-  _swSavedFields = {
-    name: document.getElementById('swName').value,
-    desc: document.getElementById('swDesc').value
-  };
-  const modal = bootstrap.Modal.getInstance(document.getElementById('swModal'));
-  if (modal) modal.hide();
-  swPickingCoords = true;
-  document.getElementById('swPickBanner').style.display = 'flex';
-  // ให้แน่ใจว่าอยู่หน้าแผนที่
-  const mapLink = document.querySelector('[data-page="mappage"]');
-  if (mapLink && !document.getElementById('page-mappage').classList.contains('active')) {
-    nav(mapLink);
-    setTimeout(() => { if(leafletMap) leafletMap.invalidateSize(); }, 150);
+async function loadOSRM(){
+  const bar=document.getElementById('osrmLoadBar'),txt=document.getElementById('osrmLoadText');
+  if(bar)bar.style.display='flex';
+  const BATCH=5;let totalRoad=0,ok=0;
+  for(let s=0;s<distSegments.length;s+=BATCH){
+    const end=Math.min(s+BATCH,distSegments.length);
+    if(txt)txt.textContent=`กำลังโหลดระยะถนน… (${s+1}–${end} จาก ${distSegments.length})`;
+    await Promise.all(Array.from({length:end-s},(_,k)=>s+k).map(i=>{
+      const{a,b}=distSegments[i];
+      return fetch(`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=false`)
+        .then(r=>r.json()).then(data=>{
+          const el=document.getElementById('rdist-'+i);if(!el)return;
+          if(data.routes?.[0]){distSegments[i].roadDist=data.routes[0].distance;distSegments[i].roadTime=data.routes[0].duration;el.textContent=fmtM(data.routes[0].distance);el.className='d-road';totalRoad+=data.routes[0].distance;ok++;}
+          else{el.textContent='ไม่มีข้อมูล';el.className='d-road error';}
+        }).catch(()=>{const el=document.getElementById('rdist-'+i);if(el){el.textContent='error';el.className='d-road error';}});
+    }));
+    if(s+BATCH<distSegments.length)await new Promise(r=>setTimeout(r,400));
   }
+  if(bar)bar.style.display='none';
+  document.getElementById('ms-road').textContent=ok>0?fmtKm(totalRoad):'N/A';
 }
 
-// ยกเลิกการเลือกพิกัด
-function cancelPickCoords() {
-  swPickingCoords = false;
-  document.getElementById('swPickBanner').style.display = 'none';
-  document.getElementById('swName').value = _swSavedFields.name || '';
-  document.getElementById('swDesc').value = _swSavedFields.desc || '';
-  new bootstrap.Modal(document.getElementById('swModal')).show();
+// POINTS LIST
+function buildPointsList(){
+  const list=document.getElementById('mapPointsList');if(!list)return;
+  list.innerHTML=SWITCHES.map((sw,i)=>`<div class="point-item" onclick="flyToSW(${sw.lat},${sw.lng},${i})"><span class="point-num">${i+1}</span><div class="point-info"><div class="p-name">${sw.n}</div><div class="p-coord">Lat: ${sw.lat.toFixed(6)} | Lng: ${sw.lng.toFixed(6)}</div></div></div>`).join('');
 }
 
-// บันทึก Switch (เพิ่มหรือแก้ไข)
-function saveSwitch() {
-  const n   = document.getElementById('swName').value.trim();
-  const d   = document.getElementById('swDesc').value.trim();
-  const lat = parseFloat(document.getElementById('swLat').value);
-  const lng = parseFloat(document.getElementById('swLng').value);
-  if (!n) { toast('กรุณาระบุชื่อ/ตำแหน่ง', 'warning'); return; }
-  if (isNaN(lat) || isNaN(lng)) { toast('กรุณาระบุพิกัด Latitude และ Longitude', 'warning'); return; }
-
-  const modal = bootstrap.Modal.getInstance(document.getElementById('swModal'));
-  if (modal) modal.hide();
-
-  if (!swEditState || swEditState.idx === -1) {
-    SWITCHES.push({n, lat, lng, d});
-    toast('เพิ่ม Switch สำเร็จ', 'success');
-  } else {
-    SWITCHES[swEditState.idx] = {n, lat, lng, d};
-    toast('แก้ไข Switch สำเร็จ', 'success');
-  }
-  renderMapMarkers();
-  renderSwitchTable();
-  renderStatBar();
-  persistSwitches();
+// CALCULATOR
+function buildCalcSelects(){
+  const from=document.getElementById('calcFrom'),to=document.getElementById('calcTo');if(!from||!to)return;
+  const opts=SWITCHES.map((sw,i)=>`<option value="${i}">${i+1}. ${sw.n}</option>`).join('');
+  from.innerHTML=to.innerHTML=opts;if(SWITCHES.length>1)to.selectedIndex=1;
+}
+async function calcDistance(){
+  const ai=parseInt(document.getElementById('calcFrom').value),bi=parseInt(document.getElementById('calcTo').value);
+  if(ai===bi){toast('กรุณาเลือกจุดที่แตกต่างกัน','warning');return;}
+  const a=SWITCHES[ai],b=SWITCHES[bi],straight=haversine(a.lat,a.lng,b.lat,b.lng);
+  const btn=document.getElementById('calcBtn');btn.textContent='⏳ กำลังโหลด…';btn.disabled=true;
+  let roadDist=null,roadTime=null;
+  try{const res=await fetch(`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=false`).then(r=>r.json());if(res.routes?.[0]){roadDist=res.routes[0].distance;roadTime=res.routes[0].duration;}}catch(e){}
+  btn.textContent='คำนวณระยะทาง';btn.disabled=false;
+  document.getElementById('crTitle').textContent=`${ai+1}. ${a.n} → ${bi+1}. ${b.n}`;
+  document.getElementById('crStraight').textContent=fmtDist(straight);
+  document.getElementById('crRoad').textContent=roadDist?fmtDist(roadDist):'ไม่มีข้อมูล';
+  if(roadTime){const m=Math.round(roadTime/60);document.getElementById('crTime').textContent=m>=60?`${Math.floor(m/60)} ชม. ${m%60} นาที`:`${m} นาที`;}else document.getElementById('crTime').textContent='–';
+  document.getElementById('crGmaps').href=`https://www.google.com/maps/dir/${a.lat},${a.lng}/${b.lat},${b.lng}`;
+  document.getElementById('calcResult').style.display='block';
+  leafletMap.fitBounds([[a.lat,a.lng],[b.lat,b.lng]],{padding:[40,40]});
+  if(calcLine)leafletMap.removeLayer(calcLine);
+  calcLine=L.polyline([[a.lat,a.lng],[b.lat,b.lng]],{color:'#dc2626',weight:3,dashArray:'8,4'}).addTo(leafletMap);
 }
 
-// ลบ Switch
-function delSwitch(idx) {
-  if (!confirm(`ต้องการลบ "${SWITCHES[idx]?.n}" ใช่หรือไม่?`)) return;
-  if (leafletMap) leafletMap.closePopup();
-  SWITCHES.splice(idx, 1);
-  renderMapMarkers();
-  renderSwitchTable();
-  renderStatBar();
-  toast('ลบ Switch สำเร็จ', 'success');
-  persistSwitches();
+// MAP TABS
+function mapTab(name){
+  document.querySelectorAll('.map-tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  document.querySelectorAll('.map-tab-content').forEach(el=>el.classList.remove('active'));
+  const el=document.getElementById('maptab-'+name);if(el)el.classList.add('active');
 }
 
-// บันทึกลง Google Sheet
-function persistSwitches() {
-  postApi({action:'saveSwitches', switches:SWITCHES})
-    .then(r => { if (!r.ok) toast('บันทึก Sheet ล้มเหลว: ' + r.error, 'danger'); })
-    .catch(e => toast('บันทึก Sheet ล้มเหลว: ' + e.message, 'danger'));
+// SWITCH CRUD
+function renderSwitchTable(){
+  const tbody=document.getElementById('swTbody');if(!tbody)return;
+  tbody.innerHTML=SWITCHES.map((sw,i)=>`<tr><td class="text-muted">${i+1}</td><td><a href="#" onclick="flyToSW(${sw.lat},${sw.lng},${i});return false" style="color:#1a3a6e;text-decoration:none">${sw.n}</a></td><td>${sw.d||'—'}</td><td style="font-size:10px;color:#94a3b8">${sw.lat.toFixed(5)}, ${sw.lng.toFixed(5)}</td><td class="admin-only" style="white-space:nowrap"><button class="btn-edit me-1" onclick="openEditSwitch(${i})"><i class="bi bi-pencil-fill"></i></button><button class="btn-del" onclick="delSwitch(${i})"><i class="bi bi-trash-fill"></i></button></td></tr>`).join('');
+}
+function openAddSwitch(){swEditState={idx:-1};document.getElementById('swModalTitle').textContent='เพิ่ม Switch ใหม่';['swName','swDesc','swLat','swLng'].forEach(id=>document.getElementById(id).value='');ensureMapPage();new bootstrap.Modal(document.getElementById('swModal')).show();}
+function openEditSwitch(idx){const sw=SWITCHES[idx];if(!sw)return;swEditState={idx};document.getElementById('swModalTitle').textContent='แก้ไข Switch';document.getElementById('swName').value=sw.n;document.getElementById('swDesc').value=sw.d||'';document.getElementById('swLat').value=sw.lat;document.getElementById('swLng').value=sw.lng;if(leafletMap)leafletMap.closePopup();new bootstrap.Modal(document.getElementById('swModal')).show();}
+function pickCoordsFromMap(){_swSavedFields={name:document.getElementById('swName').value,desc:document.getElementById('swDesc').value};const m=bootstrap.Modal.getInstance(document.getElementById('swModal'));if(m)m.hide();swPickingCoords=true;document.getElementById('swPickBanner').style.display='flex';ensureMapPage();}
+function cancelPickCoords(){swPickingCoords=false;document.getElementById('swPickBanner').style.display='none';document.getElementById('swName').value=_swSavedFields.name||'';document.getElementById('swDesc').value=_swSavedFields.desc||'';new bootstrap.Modal(document.getElementById('swModal')).show();}
+function saveSwitch(){
+  const n=document.getElementById('swName').value.trim(),d=document.getElementById('swDesc').value.trim();
+  const lat=parseFloat(document.getElementById('swLat').value),lng=parseFloat(document.getElementById('swLng').value);
+  if(!n){toast('กรุณาระบุชื่อ/ตำแหน่ง','warning');return;}
+  if(isNaN(lat)||isNaN(lng)){toast('กรุณาระบุพิกัด','warning');return;}
+  const m=bootstrap.Modal.getInstance(document.getElementById('swModal'));if(m)m.hide();
+  if(!swEditState||swEditState.idx===-1){SWITCHES.push({n,lat,lng,d});toast('เพิ่ม Switch สำเร็จ','success');}
+  else{SWITCHES[swEditState.idx]={n,lat,lng,d};toast('แก้ไข Switch สำเร็จ','success');}
+  refreshMapData();renderStatBar();persistSwitches();
+}
+function delSwitch(idx){
+  if(!confirm(`ต้องการลบ "${SWITCHES[idx]?.n}" ใช่หรือไม่?`))return;
+  if(leafletMap)leafletMap.closePopup();
+  SWITCHES.splice(idx,1);refreshMapData();renderStatBar();
+  toast('ลบ Switch สำเร็จ','success');persistSwitches();
+}
+function persistSwitches(){postApi({action:'saveSwitches',switches:SWITCHES}).then(r=>{if(!r.ok)toast('บันทึก Sheet ล้มเหลว: '+r.error,'danger');}).catch(e=>toast('บันทึก Sheet ล้มเหลว: '+e.message,'danger'));}
+function flyToSW(lat,lng,idx){
+  ensureMapPage();
+  setTimeout(()=>{if(leafletMap){leafletMap.flyTo([lat,lng],19);leafletMap.invalidateSize();}if(swMarkerList[idx])setTimeout(()=>swMarkerList[idx].openPopup(),600);},200);
+}
+function ensureMapPage(){
+  const ml=document.querySelector('[data-page="mappage"]');
+  if(ml&&!document.getElementById('page-mappage').classList.contains('active')){nav(ml);setTimeout(()=>{if(leafletMap)leafletMap.invalidateSize();},150);}
 }
 
-function flyToSW(lat, lng) {
-  const mapLink = document.querySelector('[data-page="mappage"]');
-  if (mapLink && !document.getElementById('page-mappage').classList.contains('active')) nav(mapLink);
-  setTimeout(() => { if(leafletMap){leafletMap.flyTo([lat,lng],19);leafletMap.invalidateSize();} }, 200);
-}
-
-// ════════════════════════════════════════════
-//  TOAST
-// ════════════════════════════════════════════
-function toast(msg, type='info') {
+// TOAST
+function toast(msg,type='info'){
   const id='t'+Date.now();
   const icons={success:'check-circle-fill',danger:'x-circle-fill',warning:'exclamation-triangle-fill',info:'info-circle-fill'};
-  document.getElementById('toastBox').insertAdjacentHTML('beforeend',
-    `<div id="${id}" class="t-toast t-${type}"><i class="bi bi-${icons[type]||'info-circle-fill'}"></i>${msg}
-     <button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;cursor:pointer;margin-left:auto;opacity:.6;font-size:14px">✕</button></div>`);
-  setTimeout(()=>document.getElementById(id)?.remove(), 4000);
+  document.getElementById('toastBox').insertAdjacentHTML('beforeend',`<div id="${id}" class="t-toast t-${type}"><i class="bi bi-${icons[type]||'info-circle-fill'}"></i>${msg}<button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;cursor:pointer;margin-left:auto;opacity:.6;font-size:14px">✕</button></div>`);
+  setTimeout(()=>document.getElementById(id)?.remove(),4000);
 }
 </script>
 </body>
