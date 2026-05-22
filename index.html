@@ -454,7 +454,7 @@ tr.dist-hl td{background:#dbeafe!important;}
 <div id="toastBox"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNV0zbq4gBzp4o7BU3McVC269qkDi90C5HxGey3Qu-bIPlrciFOLH6l-akiE8udRXDXA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwx34O3NuBse6h_xnuCGueC4YLRbiZXk1mx3FOxIsNavB_7HGnXXgpiN-nuEu_UIZe6w/exec';
 const PASSWORDS  = { viewer:'W2ICT.2026V', admin:'W2ICT.2026A' };
 const PAGE_CFG = {
   personnel: { sheetKey:'สถานภาพบุคลากรด้าน IT', label:'บุคลากร',
@@ -994,6 +994,15 @@ function renderDashboard(){
     if(i<0)i=hdr.findIndex(h=>/^ปี/.test(h.trim()));
     return i;
   }
+  // อ่านอายุโดยตรงจากคอลัมน์ "อายุอุปกรณ์(ปี)" หรือ "อายุ"
+  function findAgeIdx(hdr){
+    return hdr.findIndex(h=>h.includes('อายุ'));
+  }
+  function parseAge(val){
+    if(val===null||val===undefined||val==='')return null;
+    const n=parseFloat(String(val).replace(/[^0-9.]/g,''));
+    return(!isNaN(n)&&n>=0&&n<60)?Math.round(n):null;
+  }
 
   // ── SECTION 1: คอมพิวเตอร์ตามหน่วยหลัก ────────────────────────
   const cUI=ci(cH,'หน่วยหลัก'), lUI=ci(lH,'หน่วยหลัก');
@@ -1016,67 +1025,101 @@ function renderDashboard(){
   }).join('');
 
   // ── SECTION 2: วิเคราะห์อายุ ─────────────────────────────────
+  // ลำดับความสำคัญ: คอลัมน์ "อายุอุปกรณ์(ปี)" > คอลัมน์ปีที่จัดซื้อ
+  const cAI=findAgeIdx(cH), lAI=findAgeIdx(lH);
   const cYI=findYearIdx(cH), lYI=findYearIdx(lH);
-  const hasYear=cYI>=0||lYI>=0;
+  const hasAgeData=(cAI>=0||lAI>=0)||(cYI>=0||lYI>=0);
   let ageHtml='';
 
-  if(hasYear){
+  if(hasAgeData){
     const unitMap={};
-    function collectAge(rows,hdr,uIdx,yIdx,tp){
+    // แหล่งข้อมูลอายุ: ถ้ามี "อายุอุปกรณ์" ใช้ก่อน ถ้าไม่มีใช้ปีที่ซื้อ
+    function collectAge(rows,hdr,uIdx,aIdx,yIdx,tp){
       rows.forEach(r=>{
         const u=(String(r[uIdx<0?0:uIdx]||'').trim())||'ไม่ระบุ';
-        const y=yIdx>=0?parseYear(r[yIdx]):null;
+        let age=null;
+        if(aIdx>=0){
+          // อ่านอายุโดยตรง
+          age=parseAge(r[aIdx]);
+        } else if(yIdx>=0){
+          // คำนวณจากปีที่จัดซื้อ
+          const y=parseYear(r[yIdx]);
+          age=y?thisYear-y:null;
+        }
         if(!unitMap[u])unitMap[u]=[];
-        unitMap[u].push({y,tp});
+        unitMap[u].push({age,tp});
       });
     }
-    collectAge(cR,cH,cUI,cYI,'PC');
-    collectAge(lR,lH,lUI,lYI,'NB');
+    collectAge(cR,cH,cUI,cAI,cYI,'PC');
+    collectAge(lR,lH,lUI,lAI,lYI,'NB');
+
+    // แหล่งที่ใช้วิเคราะห์
+    const srcLabel=(cAI>=0||lAI>=0)?'อายุอุปกรณ์(ปี)':'ปีที่จัดซื้อ';
 
     const summary=Object.entries(unitMap).map(([u,items])=>{
-      const wy=items.filter(i=>i.y!==null).map(i=>i.y);
-      const noY=items.filter(i=>i.y===null).length;
-      const oldY=wy.length?Math.min(...wy):null;
-      const oldAge=oldY?thisYear-oldY:null;
-      const old8=wy.filter(y=>thisYear-y>=8).length;
-      const mid=wy.filter(y=>{const a=thisYear-y;return a>=5&&a<8;}).length;
-      const nw=wy.filter(y=>thisYear-y<5).length;
-      return{u,total:items.length,oldY,oldAge,old8,mid,nw,noY};
+      const wa=items.filter(i=>i.age!==null).map(i=>i.age);
+      const noAge=items.filter(i=>i.age===null).length;
+      const maxAge=wa.length?Math.max(...wa):null;
+      const avgAge=wa.length?Math.round(wa.reduce((s,v)=>s+v,0)/wa.length):null;
+      const old8=wa.filter(a=>a>=8).length;
+      const mid=wa.filter(a=>a>=5&&a<8).length;
+      const nw=wa.filter(a=>a<5).length;
+      return{u,total:items.length,maxAge,avgAge,old8,mid,nw,noAge};
     }).sort((a,b)=>{
+      // เรียงตามจำนวนเครื่องเก่า (≥8ปี) มากสุดก่อน แล้วตามอายุมากสุด
       if(b.old8!==a.old8)return b.old8-a.old8;
-      return(b.oldAge||0)-(a.oldAge||0);
+      return(b.maxAge||0)-(a.maxAge||0);
     });
 
     const ageRows=summary.map(s=>{
-      const ageStr=s.oldY?`${s.oldY} <span style="color:#94a3b8;font-size:11px">(อายุ ${s.oldAge} ปี)</span>`:'—';
+      const oldStr=s.maxAge!==null?`<strong>${s.maxAge} ปี</strong>${s.avgAge!==null?` <span style="color:#94a3b8;font-size:11px">(เฉลี่ย ${s.avgAge} ปี)</span>`:''}`:'—';
       const pills=(s.old8?`<span class="age-pill danger">${s.old8} เครื่อง ≥8ปี</span>`:'')+
                   (s.mid?`<span class="age-pill warning">${s.mid} เครื่อง 5–7ปี</span>`:'')+
-                  (s.nw?`<span class="age-pill success">${s.nw} เครื่อง ≤4ปี</span>`:'')+
-                  (s.noY?`<span class="age-pill muted">${s.noY} ไม่ระบุปี</span>`:'');
+                  (s.nw?`<span class="age-pill success">${s.nw} เครื่อง &lt;5ปี</span>`:'')+
+                  (s.noAge?`<span class="age-pill muted">${s.noAge} ไม่ระบุ</span>`:'');
       return `<tr>
         <td><strong>${s.u}</strong></td>
         <td class="text-center">${s.total}</td>
-        <td>${ageStr}</td>
+        <td>${oldStr}</td>
         <td>${pills}</td>
       </tr>`;
     }).join('');
 
-    ageHtml=`<table class="dash-tbl">
-      <thead><tr><th>หน่วยหลัก</th><th class="text-center">จำนวน</th><th>เครื่องเก่าสุด</th><th>การกระจายอายุ</th></tr></thead>
+    // สรุปรวมทุกหน่วย
+    const allAges=[...Object.values(unitMap)].flat().map(i=>i.age).filter(a=>a!==null);
+    const grandOld=allAges.filter(a=>a>=8).length;
+    const grandMid=allAges.filter(a=>a>=5&&a<8).length;
+    const grandNew=allAges.filter(a=>a<5).length;
+    const grandNoAge=[...Object.values(unitMap)].flat().filter(i=>i.age===null).length;
+
+    ageHtml=`
+    <div style="font-size:11px;color:#64748b;margin-bottom:10px">
+      <i class="bi bi-database me-1"></i>วิเคราะห์จากคอลัมน์: <strong>"${srcLabel}"</strong>
+      &nbsp;|&nbsp; รวมทั้งหมด:
+      <span class="age-pill danger">${grandOld} เครื่อง ≥8ปี</span>
+      <span class="age-pill warning">${grandMid} เครื่อง 5–7ปี</span>
+      <span class="age-pill success">${grandNew} เครื่อง &lt;5ปี</span>
+      ${grandNoAge?`<span class="age-pill muted">${grandNoAge} ไม่ระบุ</span>`:''}
+    </div>
+    <table class="dash-tbl">
+      <thead><tr>
+        <th>หน่วยหลัก</th>
+        <th class="text-center">จำนวน</th>
+        <th>อายุมากสุด (เฉลี่ย)</th>
+        <th>การกระจายอายุ</th>
+      </tr></thead>
       <tbody>${ageRows}</tbody>
     </table>
     <div style="margin-top:10px;font-size:11px;color:#94a3b8;display:flex;gap:8px;flex-wrap:wrap;">
       <span class="age-pill danger">≥ 8 ปี — ควรทดแทนเร่งด่วน</span>
       <span class="age-pill warning">5–7 ปี — วางแผนทดแทน</span>
-      <span class="age-pill success">≤ 4 ปี — ยังใช้ได้ดี</span>
+      <span class="age-pill success">&lt; 5 ปี — ยังใช้ได้ดี</span>
     </div>`;
   } else {
     // Fallback: group by brand
-    const brandIdx=ci([...cH,...lH],'ยี่ห้อ');
-    const allRows=[...cR,...lR];
     const bIdx=ci(cH,'ยี่ห้อ')>=0?ci(cH,'ยี่ห้อ'):ci(lH,'ยี่ห้อ');
     ageHtml=`<div class="alert alert-info py-2 px-3" style="font-size:12px">
-      <i class="bi bi-info-circle me-1"></i>ไม่พบคอลัมน์ "ปีที่จัดซื้อ" ในข้อมูล หากต้องการวิเคราะห์อายุ กรุณาเพิ่มคอลัมน์ดังกล่าวในชีท
+      <i class="bi bi-info-circle me-1"></i>ไม่พบคอลัมน์ "อายุอุปกรณ์(ปี)" หรือ "ปีที่จัดซื้อ" ในข้อมูล กรุณาเพิ่มคอลัมน์ดังกล่าวในชีทเพื่อวิเคราะห์อายุ
     </div>`;
     if(bIdx>=0){
       const bComb={};
