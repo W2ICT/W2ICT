@@ -201,7 +201,12 @@ tr.dist-hl td{background:#dbeafe!important;}
     </div>
     <div class="mb-2">
       <div class="modal-label">รหัสผ่าน</div>
-      <input type="password" id="pwInput" class="form-control form-control-sm" placeholder="กรอกรหัสผ่าน" onkeydown="if(event.key==='Enter')doLogin()"/>
+      <div class="input-group input-group-sm">
+        <input type="password" id="pwInput" class="form-control" placeholder="กรอกรหัสผ่าน" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <button class="btn btn-outline-secondary" type="button" onclick="togglePw()" tabindex="-1" style="border-color:#e2e8f0">
+          <i class="bi bi-eye-slash" id="pwEyeIcon"></i>
+        </button>
+      </div>
     </div>
     <div id="loginErr" class="alert alert-danger py-1 px-2 mb-2 d-none" style="font-size:12px">รหัสผ่านไม่ถูกต้อง</div>
     <button class="btn btn-primary w-100 fw-bold" onclick="doLogin()"><i class="bi bi-box-arrow-in-right me-1"></i>เข้าสู่ระบบ</button>
@@ -414,15 +419,15 @@ tr.dist-hl td{background:#dbeafe!important;}
 <div id="toastBox"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNmO8viKmHgMwxPnf-OVwA9b5F8nuuAIDZl79U8UO5k2gd0q-6T3RC_dn4AWZ2ZuFF/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3V48mK9ByZCYhD5Kwg3PVJcWdsOJ2_g4lSV9vBE5hrOuXAh5xh2rvgFr2fSI43FwJOQ/exec';
 const PASSWORDS  = { viewer:'W2ICT.2026V', admin:'W2ICT.2026A' };
 const PAGE_CFG = {
   personnel: { sheetKey:'Personnel', label:'บุคลากร',
     hideCols:['หน่วยหลัก','หน่วยรอง'] },
   computer:  { sheetKey:'Computer',  label:'คอมพิวเตอร์',
-    showCols:['ลำดับ','ชื่อ','ยี่ห้อ','รุ่น','ip','mac'], pageSize:25 },
+    showCols:['ลำดับ','ชื่อคอม','ยี่ห้ออุปกรณ์','รุ่นอุปกรณ์','ip-address','mac-address','ip address','mac address','ip','mac'], pageSize:25 },
   laptop:    { sheetKey:'Laptop',    label:'คอมพิวเตอร์ (พกพา)',
-    showCols:['ลำดับ','ชื่อ','ยี่ห้อ','รุ่น','ip','mac'], pageSize:25 },
+    showCols:['ลำดับ','ชื่อคอม','ยี่ห้ออุปกรณ์','รุ่นอุปกรณ์','ip-address','mac-address','ip address','mac address','ip','mac'], pageSize:25 },
   wifi:      { sheetKey:'WiFi',      label:'WiFi / AP',
     showCols:['ลำดับ','track','หน่วยหลัก','สถานที่','ชื่อ','รุ่น','mac','ip'], pageSize:25 },
   network:   { sheetKey:'Network',   label:'Switch / อุปกรณ์เครือข่าย',
@@ -516,6 +521,7 @@ function hideOverlay(){
 }
 
 // AUTH
+function togglePw(){const i=document.getElementById('pwInput'),ic=document.getElementById('pwEyeIcon');if(i.type==='password'){i.type='text';ic.className='bi bi-eye';}else{i.type='password';ic.className='bi bi-eye-slash';}}
 function selectRole(role){selectedRole=role;document.getElementById('tab-viewer').classList.toggle('active',role==='viewer');document.getElementById('tab-admin').classList.toggle('active',role==='admin');}
 function doLogin(){
   const pw=document.getElementById('pwInput').value;
@@ -540,7 +546,7 @@ function doLogout(){
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('appShell').style.display='none';
   document.getElementById('statsBar').style.display='none';
-  document.getElementById('pwInput').value='';
+  document.getElementById('pwInput').value='';document.getElementById('pwInput').type='password';document.getElementById('pwEyeIcon').className='bi bi-eye-slash';
   document.getElementById('loginErr').classList.add('d-none');
   document.body.classList.remove('role-viewer','role-admin');
   userRole='viewer';selectedRole='viewer';selectRole('viewer');
