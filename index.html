@@ -419,18 +419,18 @@ tr.dist-hl td{background:#dbeafe!important;}
 <div id="toastBox"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3V48mK9ByZCYhD5Kwg3PVJcWdsOJ2_g4lSV9vBE5hrOuXAh5xh2rvgFr2fSI43FwJOQ/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzuxMJ97bU0LOFAyAi-Bu019OVUp2QRevOw0825ALzroXkN0fk5naxBZ3o21A7wCdBuGw/exec';
 const PASSWORDS  = { viewer:'W2ICT.2026V', admin:'W2ICT.2026A' };
 const PAGE_CFG = {
-  personnel: { sheetKey:'Personnel', label:'บุคลากร',
+  personnel: { sheetKey:'สถานภาพบุคลากรด้าน IT', label:'บุคลากร',
     hideCols:['หน่วยหลัก','หน่วยรอง'] },
-  computer:  { sheetKey:'Computer',  label:'คอมพิวเตอร์',
+  computer:  { sheetKey:'สถานภาพคอมพิวเตอร์',  label:'คอมพิวเตอร์',
     showCols:['ลำดับ','ชื่อคอม','ยี่ห้ออุปกรณ์','รุ่นอุปกรณ์','ip-address','mac-address','ip address','mac address','ip','mac'], pageSize:25 },
-  laptop:    { sheetKey:'Laptop',    label:'คอมพิวเตอร์ (พกพา)',
+  laptop:    { sheetKey:'สถานภาพคอมพิวเตอร์ (พกพา)', label:'คอมพิวเตอร์ (พกพา)',
     showCols:['ลำดับ','ชื่อคอม','ยี่ห้ออุปกรณ์','รุ่นอุปกรณ์','ip-address','mac-address','ip address','mac address','ip','mac'], pageSize:25 },
-  wifi:      { sheetKey:'WiFi',      label:'WiFi / AP',
+  wifi:      { sheetKey:'สถานภาพอุปกรณ์เครือข่าย (WIFI)', label:'WiFi / AP',
     showCols:['ลำดับ','track','หน่วยหลัก','สถานที่','ชื่อ','รุ่น','mac','ip'], pageSize:25 },
-  network:   { sheetKey:'Network',   label:'Switch / อุปกรณ์เครือข่าย',
+  network:   { sheetKey:'สถานภาพอุปกรณ์เครือข่าย', label:'Switch / อุปกรณ์เครือข่าย',
     showCols:['ลำดับ','track','หน่วยหลัก','สถานที่','ชื่อ','รุ่น','mac','ip'], pageSize:25 }
 };
 let userRole='viewer', selectedRole='viewer', allData={}, sheetMeta=[], filteredCache={}, editState=null, sbCollapsed=false;
